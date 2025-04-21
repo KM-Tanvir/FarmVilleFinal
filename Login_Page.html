@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FarmVille - Login</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.3)), url('/api/placeholder/1920/1080');
+      background-size: cover;
+      background-position: center;
+    }
+
+    .login-container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .login-header h1 {
+      color: #4088f5;
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .login-header p {
+      color: #666;
+    }
+
+    .login-form .form-group {
+      margin-bottom: 20px;
+    }
+
+    .login-form label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #555;
+    }
+
+    .login-form select,
+    .login-form input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 15px;
+    }
+
+    .login-form input:focus,
+    .login-form select:focus {
+      outline: none;
+      border-color: #4088f5;
+      box-shadow: 0 0 0 2px rgba(64, 136, 245, 0.2);
+    }
+
+    .login-tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .login-tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 15px;
+      opacity: 0.7;
+      position: relative;
+    }
+
+    .login-tab.active {
+      opacity: 1;
+      font-weight: bold;
+      color: #4088f5;
+    }
+
+    .login-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background-color: #4088f5;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      background-color: #4088f5;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+      transition: background-color 0.3s;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .btn:hover {
+      background-color: #3373d9;
+    }
+
+    .forget-pwd {
+      text-align: right;
+      margin-top: 10px;
+    }
+
+    .forget-pwd a {
+      color: #4088f5;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .forget-pwd a:hover {
+      text-decoration: underline;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #4088f5;
+      border-radius: 50%;
+      color: white;
+      font-size: 36px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-header">
+      <div class="logo">🌾</div>
+      <h1>FarmVille</h1>
+      <p>Access your farm management dashboard</p>
+    </div>
+
+    <form id="login-form" action="login.php" method="post" class="login-form">
+      <div class="form-group">
+        <label for="user-select">Select User</label>
+        <select id="user-select" name="user_select">
+          <option value="">-- Select a user --</option>
+          <option value="1">John Doe (Green Valley Farm)</option>
+          <option value="2">Jane Smith (Sunrise Acres)</option>
+          <option value="3">Robert Johnson (Harvest Hills)</option>
+          <option value="admin">Admin (System Administrator)</option>
+          <option value="4">Add new user</option>
+        </select>
+      </div>
+
+      <div class="login-tabs">
+        <button type="button" class="login-tab active" data-tab="email-tab">Email</button>
+        <button type="button" class="login-tab" data-tab="phone-tab">Phone</button>
+      </div>
+
+      <div id="email-tab" class="tab-content active">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="Enter your email">
+        </div>
+      </div>
+
+      <div id="phone-tab" class="tab-content">
+        <div class="form-group">
+          <label for="phone">Phone Number</label>
+          <input type="tel" id="phone" name="phone" placeholder="Enter your phone number">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter your password">
+      </div>
+
+      <div class="forget-pwd">
+        <a href="forgot_password.php">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn">Login</button>
+    </form>
+  </div>
+
+  <script>
+    // Tab switching functionality
+    const tabs = document.querySelectorAll('.login-tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Remove active class from all tabs and contents
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        
+        // Add active class to current tab and corresponding content
+        tab.classList.add('active');
+        const tabId = tab.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+        
+        // Update form inputs based on tab
+        if (tabId === 'email-tab') {
+          document.getElementById('email').setAttribute('required', '');
+          document.getElementById('phone').removeAttribute('required');
+        } else {
+          document.getElementById('phone').setAttribute('required', '');
+          document.getElementById('email').removeAttribute('required');
+        }
+      });
+    });
+
+    // Update form inputs when user is selected
+    document.getElementById('user-select').addEventListener('change', function() {
+      const userId = this.value;
+      if (userId === '1') {
+        document.getElementById('email').value = 'john.doe@example.com';
+        document.getElementById('phone').value = '(555) 123-4567';
+      } else if (userId === '2') {
+        document.getElementById('email').value = 'jane.smith@example.com';
+        document.getElementById('phone').value = '(555) 234-5678';
+      } else if (userId === '3') {
+        document.getElementById('email').value = 'robert.johnson@example.com';
+        document.getElementById('phone').value = '(555) 345-6789';
+      } else if (userId === 'admin') {
+        document.getElementById('email').value = 'admin@farmville.com';
+        document.getElementById('phone').value = '(555) 999-0000';
+      } else {
+        document.getElementById('email').value = '';
+        document.getElementById('phone').value = '';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Farmer Profile</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+    }
+
+    .sidebar {
+      width: 240px;
+      background-color: #f8f9fa;
+      height: 100vh;
+      transition: width 0.3s;
+      overflow: hidden;
+      position: fixed;
+      border-right: 1px solid #e0e0e0;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar.collapsed {
+      width: 60px;
+    }
+
+    .toggle-btn {
+      background-color: #4088f5;
+      color: white;
+      border: none;
+      width: 100%;
+      padding: 15px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .toggle-btn span {
+      font-size: 20px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+      margin-top: 10px;
+    }
+
+    li {
+      padding: 5px;
+      display: flex;
+      align-items: center;
+    }
+
+    li:hover {
+      background-color: #dee2e6;
+    }
+
+    li .icon {
+      margin-right: 10px;
+      font-size: 18px;
+    }
+
+    .collapsed .text {
+      display: none;
+    }
+
+    .main-content {
+      margin-left: 240px;
+      padding: 20px;
+      transition: margin-left 0.3s;
+      width: 100%;
+    }
+
+    .collapsed ~ .main-content {
+      margin-left: 60px;
+    }
+
+    a {
+      text-decoration: none;
+      color: black;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      margin: 5px;
+      padding: 7px;
+      border-radius: 7px;
+    }
+
+    .sidebar a.active {
+      background-color: #3482f8;
+      color: white;
+      font-weight: bold;
+    }
+
+    .profile-container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 800px;
+      margin: 20px auto;
+    }
+
+    .profile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .profile-header h1 {
+      color: #333;
+      font-size: 24px;
+    }
+
+    .profile-photo {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      background-color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 20px;
+      overflow: hidden;
+    }
+
+    .profile-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-info {
+      margin-bottom: 20px;
+    }
+
+    .info-group {
+      margin-bottom: 15px;
+    }
+
+    .info-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #555;
+    }
+
+    .info-group input, .info-group textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .info-group textarea {
+      height: 80px;
+      resize: vertical;
+    }
+
+    .btn {
+      padding: 10px 15px;
+      background-color: #4088f5;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #3373d9;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+    }
+
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+
+    .profile-header-content {
+      display: flex;
+      align-items: center;
+    }
+
+    .profile-name {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .edit-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .section-title {
+      margin: 20px 0 10px;
+      color: #4088f5;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+
+    .two-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .two-columns {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <button class="toggle-btn" onclick="toggleSidebar()">
+      <span>☰</span>
+    </button>
+    <ul>
+      <li>
+        <a href="index.html">
+          <span class="icon">🏠</span>
+          <span class="text">Home</span>
+        </a>
+      </li>
+      <li>
+        <a href="Farmer_Profile.html" class="active">
+          <span class="icon">👨‍🌾</span>
+          <span class="text">My Profile</span>
+        </a>
+      </li>
+      <li>
+        <a href="Product_Information.html">
+          <span class="icon">ℹ️</span>
+          <span class="text">Product Information</span>
+        </a>
+      </li>
+      <li>
+        <a href="Historical_production.html">
+          <span class="icon">📊</span>
+          <span class="text">Historical Production</span>
+        </a>
+      </li>
+      <li>
+        <a href="javascript:history.back()">
+          <span class="icon">⬅️</span>
+          <span class="text">Back</span>
+        </a>
+      </li>
+      <li>
+        <a href="logout.php">
+          <span class="icon">⏻</span>
+          <span class="text">Sign Out</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <div class="profile-container">
+      <div class="profile-header">
+        <div class="profile-header-content">
+          <div class="profile-photo">
+            <img id="profile-image" src="/api/placeholder/100/100" alt="Farmer profile photo">
+          </div>
+          <div>
+            <h1>Farmer Profile</h1>
+            <p class="profile-name" id="full-name-display">John Doe</p>
+          </div>
+        </div>
+        <button class="btn" id="edit-profile-btn">Edit Profile</button>
+      </div>
+
+      <form id="profile-form" action="update_profile.php" method="post" enctype="multipart/form-data">
+        <h3 class="section-title">Personal Information</h3>
+        <div class="two-columns">
+          <div class="info-group">
+            <label for="first-name">First Name</label>
+            <input type="text" id="first-name" name="first_name" value="John" readonly>
+          </div>
+          <div class="info-group">
+            <label for="last-name">Last Name</label>
+            <input type="text" id="last-name" name="last_name" value="Doe" readonly>
+          </div>
+        </div>
+
+        <div class="info-group">
+          <label for="profile-picture">Profile Picture</label>
+          <input type="file" id="profile-picture" name="profile_picture" disabled>
+        </div>
+
+        <h3 class="section-title">Contact Information</h3>
+        <div class="two-columns">
+          <div class="info-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" value="john.doe@example.com" readonly>
+          </div>
+          <div class="info-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone" value="(555) 123-4567" readonly>
+          </div>
+        </div>
+
+        <h3 class="section-title">Farm Details</h3>
+        <div class="info-group">
+          <label for="farm-name">Farm Name</label>
+          <input type="text" id="farm-name" name="farm_name" value="Green Valley Farm" readonly>
+        </div>
+
+        <div class="info-group">
+          <label for="address">Farm Address</label>
+          <textarea id="address" name="address" readonly>123 Rural Road, Farmington, CA 95230</textarea>
+        </div>
+
+        <div class="two-columns">
+          <div class="info-group">
+            <label for="farm-size">Farm Size (acres)</label>
+            <input type="number" id="farm-size" name="farm_size" value="75" readonly>
+          </div>
+          <div class="info-group">
+            <label for="farm-type">Farm Type</label>
+            <input type="text" id="farm-type" name="farm_type" value="Organic Vegetables" readonly>
+          </div>
+        </div>
+
+        <div class="edit-buttons" style="display: none;">
+          <button type="submit" class="btn">Save Changes</button>
+          <button type="button" class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("collapsed");
+    }
+
+    document.getElementById('edit-profile-btn').addEventListener('click', function() {
+      // Enable form fields
+      const inputs = document.querySelectorAll('#profile-form input, #profile-form textarea');
+      inputs.forEach(input => {
+        input.removeAttribute('readonly');
+        if (input.id === 'profile-picture') {
+          input.removeAttribute('disabled');
+        }
+      });
+      
+      // Show save/cancel buttons
+      document.querySelector('.edit-buttons').style.display = 'flex';
+      
+      // Hide edit button
+      this.style.display = 'none';
+    });
+
+    document.getElementById('cancel-edit-btn').addEventListener('click', function() {
+      // Disable form fields
+      const inputs = document.querySelectorAll('#profile-form input, #profile-form textarea');
+      inputs.forEach(input => {
+        input.setAttribute('readonly', true);
+        if (input.id === 'profile-picture') {
+          input.setAttribute('disabled', true);
+        }
+      });
+      
+      // Hide save/cancel buttons
+      document.querySelector('.edit-buttons').style.display = 'none';
+      
+      // Show edit button
+      document.getElementById('edit-profile-btn').style.display = 'block';
+    });
+
+    // Update displayed name when fields change
+    document.getElementById('first-name').addEventListener('input', updateDisplayName);
+    document.getElementById('last-name').addEventListener('input', updateDisplayName);
+
+    function updateDisplayName() {
+      const firstName = document.getElementById('first-name').value;
+      const lastName = document.getElementById('last-name').value;
+      document.getElementById('full-name-display').textContent = firstName + ' ' + lastName;
+    }
+  </script>
+</body>
+</html>
