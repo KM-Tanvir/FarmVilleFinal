@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Information</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+    }
+
+    .sidebar {
+      width: 240px;
+      background-color: #f8f9fa;
+      height: 100vh;
+      transition: width 0.3s;
+      overflow: hidden;
+      position: fixed;
+      border-right: 1px solid #e0e0e0;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar.collapsed {
+      width: 60px;
+    }
+
+    .toggle-btn {
+      background-color: #4088f5;
+      color: white;
+      border: none;
+      width: 100%;
+      padding: 15px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .toggle-btn span {
+      font-size: 20px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+      margin-top: 10px;
+    }
+
+    li {
+      padding: 5px;
+      display: flex;
+      align-items: center;
+    }
+
+    li:hover {
+      background-color: #dee2e6;
+    }
+
+    li .icon {
+      margin-right: 10px;
+      font-size: 18px;
+    }
+
+    .collapsed .text {
+      display: none;
+    }
+
+    .main-content {
+      margin-left: 240px;
+      padding: 20px;
+      transition: margin-left 0.3s;
+      width: 100%;
+    }
+
+    .collapsed ~ .main-content {
+      margin-left: 60px;
+    }
+
+    a {
+      text-decoration: none;
+      color: black;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      margin: 5px;
+      padding: 7px;
+      border-radius: 7px;
+    }
+
+    .sidebar a.active {
+      background-color: #3482f8;
+      color: white;
+      font-weight: bold;
+    }
+
+    .content-container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin: 20px auto;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .page-header h1 {
+      color: #333;
+      font-size: 24px;
+    }
+
+    .btn {
+      padding: 10px 15px;
+      background-color: #4088f5;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #3373d9;
+    }
+
+    .search-container {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .search-container input {
+      flex-grow: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+
+    tr:hover {
+      background-color: #f5f5f5;
+    }
+
+    .action-icons {
+      display: flex;
+      gap: 15px;
+    }
+
+    .action-icons button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .edit-icon {
+      color: #4088f5;
+    }
+
+    .delete-icon {
+      color: #dc3545;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 60%;
+      max-width: 500px;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close:hover {
+      color: black;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .seasonality-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .season-tag {
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .season-spring {
+      background-color: #c8e6c9;
+      color: #2e7d32;
+    }
+
+    .season-summer {
+      background-color: #ffecb3;
+      color: #ff8f00;
+    }
+
+    .season-fall {
+      background-color: #ffccbc;
+      color: #d84315;
+    }
+
+    .season-winter {
+      background-color: #bbdefb;
+      color: #1565c0;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .pagination button {
+      padding: 5px 10px;
+      margin: 0 5px;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .pagination button.active {
+      background-color: #4088f5;
+      color: white;
+      border-color: #4088f5;
+    }
+
+    @media (max-width: 768px) {
+      .main-content {
+        margin-left: 60px;
+      }
+      
+      .sidebar {
+        width: 60px;
+      }
+      
+      .text {
+        display: none;
+      }
+      
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <button class="toggle-btn" onclick="toggleSidebar()">
+      <span>☰</span>
+    </button>
+    <ul>
+      <li>
+        <a href="index.html">
+          <span class="icon">🏠</span>
+          <span class="text">Home</span>
+        </a>
+      </li>
+      <li>
+        <a href="Farmer_Profile.html">
+          <span class="icon">👨‍🌾</span>
+          <span class="text">My Profile</span>
+        </a>
+      </li>
+      <li>
+        <a href="Product_Information.html" class="active">
+          <span class="icon">ℹ️</span>
+          <span class="text">Product Information</span>
+        </a>
+      </li>
+      <li>
+        <a href="Historical_production.html">
+          <span class="icon">📊</span>
+          <span class="text">Historical Production</span>
+        </a>
+      </li>
+      <li>
+        <a href="javascript:history.back()">
+          <span class="icon">⬅️</span>
+          <span class="text">Back</span>
+        </a>
+      </li>
+      <li>
+        <a href="logout.php">
+          <span class="icon">⏻</span>
+          <span class="text">Sign Out</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <div class="content-container">
+      <div class="page-header">
+        <h1>Product Information</h1>
+        <button class="btn" id="add-product-btn">Add New Product</button>
+      </div>
+
+      <div class="search-container">
+        <input type="text" id="search-input" placeholder="Search products...">
+        <button class="btn" onclick="searchProducts()">Search</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Agricultural Product</th>
+            <th>Product Type</th>
+            <th>Product Variety</th>
+            <th>Seasonality</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="product-table-body">
+          <!-- Sample data -->
+          <tr>
+            <td>Tomato</td>
+            <td>Vegetable</td>
+            <td>Roma</td>
+            <td>
+              <div class="seasonality-tags">
+                <span class="season-tag season-spring">Spring</span>
+                <span class="season-tag season-summer">Summer</span>
+              </div>
+            </td>
+            <td>
+              <div class="action-icons">
+                <button class="edit-icon" onclick="editProduct(1)">✏️</button>
+                <button class="delete-icon" onclick="deleteProduct(1)">🗑️</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>Apple</td>
+            <td>Fruit</td>
+            <td>Gala</td>
+            <td>
+              <div class="seasonality-tags">
+                <span class="season-tag season-fall">Fall</span>
+              </div>
+            </td>
+            <td>
+              <div class="action-icons">
+                <button class="edit-icon" onclick="editProduct(2)">✏️</button>
+                <button class="delete-icon" onclick="deleteProduct(2)">🗑️</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>Wheat</td>
+            <td>Grain</td>
+            <td>Hard Red Winter</td>
+            <td>
+              <div class="seasonality-tags">
+                <span class="season-tag season-summer">Summer</span>
+                <span class="season-tag season-fall">Fall</span>
+              </div>
+            </td>
+            <td>
+              <div class="action-icons">
+                <button class="edit-icon" onclick="editProduct(3)">✏️</button>
+                <button class="delete-icon" onclick="deleteProduct(3)">🗑️</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>Potato</td>
+            <td>Vegetable</td>
+            <td>Russet</td>
+            <td>
+              <div class="seasonality-tags">
+                <span class="season-tag season-fall">Fall</span>
+                <span class="season-tag season-winter">Winter</span>
+              </div>
+            </td>
+            <td>
+              <div class="action-icons">
+                <button class="edit-icon" onclick="editProduct(4)">✏️</button>
+                <button class="delete-icon" onclick="deleteProduct(4)">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="pagination">
+        <button>Previous</button>
+        <button class="active">1</button>
+        <button>2</button>
+        <button>3</button>
+        <button>Next</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Product Modal -->
+  <div id="product-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2 id="modal-title">Add New Product</h2>
+      <form id="product-form" action="product_actions.php" method="post">
+        <input type="hidden" id="product-id" name="product_id">
+        <input type="hidden" name="action" id="form-action" value="add">
+        
+        <div class="form-group">
+          <label for="product-name">Agricultural Product</label>
+          <input type="text" id="product-name" name="product_name" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="product-type">Product Type</label>
+          <select id="product-type" name="product_type" required>
+            <option value="">Select Type...</option>
+            <option value="Vegetable">Vegetable</option>
+            <option value="Fruit">Fruit</option>
+            <option value="Grain">Grain</option>
+            <option value="Legume">Legume</option>
+            <option value="Herb">Herb</option>
+            <option value="Root Crop">Root Crop</option>
+            <option value="Nut">Nut</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="product-variety">Product Variety</label>
+          <input type="text" id="product-variety" name="product_variety" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Seasonality</label>
+          <div class="form-check">
+            <input type="checkbox" id="season-spring" name="seasonality[]" value="Spring">
+            <label for="season-spring">Spring</label>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="season-summer" name="seasonality[]" value="Summer">
+            <label for="season-summer">Summer</label>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="season-fall" name="seasonality[]" value="Fall">
+            <label for="season-fall">Fall</label>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="season-winter" name="seasonality[]" value="Winter">
+            <label for="season-winter">Winter</label>
+          </div>
+        </div>
+        
+        <div class="modal-buttons">
+          <button type="button" class="btn btn-secondary close-btn">Cancel</button>
+          <button type="submit" class="btn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Confirm Delete</h2>
+      <p>Are you sure you want to delete this product? This action cannot be undone.</p>
+      <form id="delete-form" action="product_actions.php" method="post">
+        <input type="hidden" id="delete-product-id" name="product_id">
+        <input type="hidden" name="action" value="delete">
+        
+        <div class="modal-buttons">
+          <button type="button" class="btn btn-secondary close-btn">Cancel</button>
+          <button type="submit" class="btn" style="background-color: #dc3545;">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("collapsed");
+      
+      // Adjust main content margin
+      const mainContent = document.querySelector(".main-content");
+      if (document.getElementById("sidebar").classList.contains("collapsed")) {
+        mainContent.style.marginLeft = "60px";
+      } else {
+        mainContent.style.marginLeft = "240px";
+      }
+    }
+
+    // Modal handling
+    const productModal = document.getElementById("product-modal");
+    const deleteModal = document.getElementById("delete-modal");
+    const addProductBtn = document.getElementById("add-product-btn");
+    const closeBtns = document.querySelectorAll(".close, .close-btn");
+
+    addProductBtn.onclick = function() {
+      document.getElementById("modal-title").textContent = "Add New Product";
+      document.getElementById("form-action").value = "add";
+      document.getElementById("product-id").value = "";
+      document.getElementById("product-form").reset();
+      productModal.style.display = "block";
+    }
+
+    closeBtns.forEach(btn => {
+      btn.onclick = function() {
+        productModal.style.display = "none";
+        deleteModal.style.display = "none";
+      }
+    });
+
+    window.onclick = function(event) {
+      if (event.target == productModal) {
+        productModal.style.display = "none";
+      }
+      if (event.target == deleteModal) {
+        deleteModal.style.display = "none";
+      }
+    }
+
+    function editProduct(id) {
+      document.getElementById("modal-title").textContent = "Edit Product";
+      document.getElementById("form-action").value = "edit";
+      document.getElementById("product-id").value = id;
+      
+      // In a real application, you would fetch the product data from the server
+      // For demo purposes, let's simulate with some hardcoded data
+      const productData = {
+        1: { name: "Tomato", type: "Vegetable", variety: "Roma", seasonality: ["Spring", "Summer"] },
+        2: { name: "Apple", type: "Fruit", variety: "Gala", seasonality: ["Fall"] },
+        3: { name: "Wheat", type: "Grain", variety: "Hard Red Winter", seasonality: ["Summer", "Fall"] },
+        4: { name: "Potato", type: "Vegetable", variety: "Russet", seasonality: ["Fall", "Winter"] }
+      };
+      
+      if (productData[id]) {
+        document.getElementById("product-name").value = productData[id].name;
+        document.getElementById("product-type").value = productData[id].type;
+        document.getElementById("product-variety").value = productData[id].variety;
+        
+        // Reset all checkboxes
+        document.querySelectorAll('input[name="seasonality[]"]').forEach(cb => cb.checked = false);
+        
+        // Check the appropriate seasons
+        productData[id].seasonality.forEach(season => {
+          document.getElementById(`season-${season.toLowerCase()}`).checked = true;
+        });
+      }
+      
+      productModal.style.display = "block";
+    }
+
+    function deleteProduct(id) {
+      document.getElementById("delete-product-id").value = id;
+      deleteModal.style.display = "block";
+    }
+
+    function searchProducts() {
+      const searchTerm = document.getElementById("search-input").value.toLowerCase();
+      const rows = document.getElementById("product-table-body").getElementsByTagName("tr");
+      
+      for (let i = 0; i < rows.length; i++) {
+        const rowText = rows[i].textContent.toLowerCase();
+        rows[i].style.display = rowText.includes(searchTerm) ? "" : "none";
+      }
+    }
+  </script>
+</body>
+</html>
