@@ -1,0 +1,807 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FarmVille Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+  <style>
+    *{
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #ffffff;
+      color: #333;
+      height: 100vh;
+      display: flex;
+    }
+
+    /* Sidebar Styles */
+    .sidebar {
+      width: 250px;
+      background-color: #b3e5fc;
+      padding: 20px 0;
+      height: 100vh;
+      border-right: 3px solid #1976d2;
+      transition: all 0.3s ease;
+    }
+
+    .logo {
+      text-align: center;
+      padding: 0 20px 20px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #0d47a1;
+      border-bottom: 2px solid #1976d2;
+      margin-bottom: 20px;
+    }
+
+    .logo i {
+      margin-right: 10px;
+      color: #0288d1;
+    }
+
+    .nav-links {
+      padding: 0 20px;
+    }
+
+    .nav-links li {
+      list-style: none;
+      margin-bottom: 10px;
+    }
+
+    .nav-links li a {
+      display: flex;
+      align-items: center;
+      padding: 12px 15px;
+      color: #333;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .nav-links li a:hover,
+    .nav-links li a.active {
+      background-color: #81d4fa;
+      color: #01579b;
+    }
+
+    .nav-links li a i {
+      margin-right: 10px;
+      font-size: 18px;
+      color: #0288d1;
+    }
+
+    /* Main Content Styles */
+    .main-content {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      background-color: #e1f5fe;
+      padding: 8px 15px;
+      border-radius: 20px;
+      border: 1px solid #1976d2;
+    }
+
+    .user-info .username {
+      margin-right: 10px;
+      color: #0d47a1;
+    }
+
+    .user-info .user-icon i {
+      font-size: 18px;
+      color: #0288d1;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header {
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .dashboard-header h1 {
+      font-size: 1.8rem;
+      color: #0d47a1;
+      display: flex;
+      align-items: center;
+    }
+
+    .dashboard-header h1 i {
+      margin-right: 10px;
+      color: #0288d1;
+    }
+
+    .date-filter {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .date-filter select {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #b3e5fc;
+      background-color: white;
+      color: #0d47a1;
+    }
+
+    /* Cards Section */
+    .overview-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: #e1f5fe;
+      border-radius: 20px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 16px rgba(3, 169, 244, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 1px solid #81d4fa;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 24px rgba(25, 118, 210, 0.15);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .card-icon {
+      font-size: 1.8rem;
+      color: #0d47a1;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: rgba(2, 136, 209, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-trend {
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .trend-up {
+      color: #2e7d32;
+    }
+
+    .trend-down {
+      color: #c62828;
+    }
+
+    .card-info h2 {
+      font-size: 1.1rem;
+      color: #0d47a1;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-info p {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-footer {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: auto;
+    }
+
+    /* Dashboard Widgets */
+    .dashboard-widgets {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .widget {
+      background: #e1f5fe;
+      padding: 1.5rem;
+      border-radius: 20px;
+      box-shadow: 0 6px 12px rgba(3, 169, 244, 0.1);
+      border: 1px solid #81d4fa;
+    }
+
+    .widget-lg {
+      grid-column: span 2;
+    }
+
+    .widget h2 {
+      color: #0d47a1;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      font-size: 1.2rem;
+    }
+
+    .widget h2 i {
+      margin-right: 10px;
+      color: #0288d1;
+    }
+
+    /* Chart Container */
+    .chart-container {
+      height: 300px;
+      width: 100%;
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      border: 1px solid #b3e5fc;
+    }
+
+    /* Status Summary */
+    .status-summary ul {
+      list-style: none;
+    }
+
+    .status-summary li {
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      background: white;
+      border-radius: 10px;
+      border: 1px solid #b3e5fc;
+      justify-content: space-between;
+    }
+
+    .status-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .status-good {
+      background-color: rgba(46, 125, 50, 0.1);
+      color: #2e7d32;
+    }
+
+    .status-warning {
+      background-color: rgba(255, 143, 0, 0.1);
+      color: #ff8f00;
+    }
+
+    .status-critical {
+      background-color: rgba(211, 47, 47, 0.1);
+      color: #d32f2f;
+    }
+
+    .status-count {
+      font-weight: bold;
+    }
+
+    /* Recent Activity */
+    .activity-list {
+      list-style: none;
+    }
+
+    .activity-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #e1f5fe;
+    }
+
+    .activity-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: rgba(2, 136, 209, 0.1);
+      color: #0288d1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .activity-details {
+      flex-grow: 1;
+    }
+
+    .activity-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .activity-time {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    /* Product Distribution */
+    .product-distribution {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .product-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .product-bar {
+      height: 8px;
+      border-radius: 4px;
+      background-color: #e1f5fe;
+      flex-grow: 1;
+    }
+
+    .product-fill {
+      height: 100%;
+      border-radius: 4px;
+      background-color: #0288d1;
+    }
+
+    .product-value {
+      font-weight: bold;
+      min-width: 50px;
+      text-align: right;
+    }
+
+    /* Alert Notifications */
+    .alert-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: white;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      border-left: 4px solid #ff9800;
+    }
+
+    .alert-critical {
+      border-left-color: #f44336;
+    }
+
+    .alert-icon {
+      color: #ff9800;
+      font-size: 1.2rem;
+    }
+
+    .alert-critical .alert-icon {
+      color: #f44336;
+    }
+
+    .alert-message {
+      flex-grow: 1;
+    }
+
+    .alert-time {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 1200px) {
+      .dashboard-widgets {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      .widget-lg {
+        grid-column: span 1;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 80px;
+        overflow: hidden;
+      }
+
+      .logo span, .nav-links li a span {
+        display: none;
+      }
+
+      .nav-links li a {
+        justify-content: center;
+        padding: 15px 0;
+      }
+
+      .nav-links li a i {
+        margin-right: 0;
+        font-size: 20px;
+      }
+
+      .dashboard-widgets {
+        grid-template-columns: 1fr;
+      }
+
+      .top-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .date-filter {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  <div class="sidebar">
+    <div class="logo">
+      <i class="fas fa-store-alt"></i> <span>FarmVille</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html" class="active"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+      <li><a href="storage-units.html"><i class="fas fa-warehouse"></i> <span>Storage Unit</span></a></li>
+      <li><a href="add-harvest.html"><i class="fas fa-plus-circle"></i> <span>Add Harvest</span></a></li>
+      <li><a href="product-movement.html"><i class="fas fa-exchange-alt"></i> <span>Product Movement</span></a></li>
+      <li><a href="manage-storage.html"><i class="fas fa-tools"></i> <span>Manage Storage</span></a></li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Top Navigation -->
+    <div class="top-nav">
+      <div class="dashboard-header">
+        <h1><i class="fas fa-chart-line"></i> Storage Dashboard</h1>
+        <div class="date-filter">
+          <span>View:</span>
+          <select>
+            <option>Last 7 Days</option>
+            <option selected>Last 30 Days</option>
+            <option>Last Quarter</option>
+            <option>Custom Range</option>
+          </select>
+        </div>
+      </div>
+      <div class="user-info">
+        <span class="username">Admin</span>
+        <div class="user-icon"><i class="fas fa-user-cog"></i></div>
+      </div>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="overview-cards">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="fas fa-warehouse"></i>
+          </div>
+          <div class="card-trend trend-up">
+            <i class="fas fa-arrow-up"></i> 12%
+          </div>
+        </div>
+        <div class="card-info">
+          <h2>Total Storage Units</h2>
+          <p>12</p>
+          <div class="card-footer">3 units added this month</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="fas fa-weight-hanging"></i>
+          </div>
+          <div class="card-trend trend-down">
+            <i class="fas fa-arrow-down"></i> 8%
+          </div>
+        </div>
+        <div class="card-info">
+          <h2>Storage Utilization</h2>
+          <p>68%</p>
+          <div class="card-footer">5,500 kg available</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="fas fa-exchange-alt"></i>
+          </div>
+          <div class="card-trend trend-up">
+            <i class="fas fa-arrow-up"></i> 24%
+          </div>
+        </div>
+        <div class="card-info">
+          <h2>Monthly Movements</h2>
+          <p>142</p>
+          <div class="card-footer">32 incoming, 110 outgoing</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="card-trend trend-down">
+            <i class="fas fa-arrow-down"></i> 5%
+          </div>
+        </div>
+        <div class="card-info">
+          <h2>Active Alerts</h2>
+          <p>3</p>
+          <div class="card-footer">1 critical, 2 warnings</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Widgets -->
+    <div class="dashboard-widgets">
+      <!-- Capacity Overview Chart -->
+      <div class="widget widget-lg">
+        <h2><i class="fas fa-chart-pie"></i> Storage Capacity Distribution</h2>
+        <div class="chart-container">
+          <canvas id="capacity-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Status Summary -->
+      <div class="widget">
+        <h2><i class="fas fa-clipboard-check"></i> Storage Health</h2>
+        <ul class="status-summary">
+          <li>
+            <div class="status-info">
+              <div class="status-icon status-good">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <span>Optimal Conditions</span>
+            </div>
+            <span class="status-count">8 units</span>
+          </li>
+          <li>
+            <div class="status-info">
+              <div class="status-icon status-warning">
+                <i class="fas fa-exclamation-circle"></i>
+              </div>
+              <span>Needs Attention</span>
+            </div>
+            <span class="status-count">3 units</span>
+          </li>
+          <li>
+            <div class="status-info">
+              <div class="status-icon status-critical">
+                <i class="fas fa-times-circle"></i>
+              </div>
+              <span>Critical Issues</span>
+            </div>
+            <span class="status-count">1 unit</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="widget widget-lg">
+        <h2><i class="fas fa-history"></i> Recent Activity</h2>
+        <ul class="activity-list">
+          <li class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-truck-loading"></i>
+            </div>
+            <div class="activity-details">
+              <div class="activity-title">Vendor collection approved for FreshMart</div>
+              <div class="activity-time">Today, 10:30 AM</div>
+            </div>
+          </li>
+          <li class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-thermometer-half"></i>
+            </div>
+            <div class="activity-details">
+              <div class="activity-title">Temperature alert in SU-003 (Cold Storage)</div>
+              <div class="activity-time">Today, 08:45 AM</div>
+            </div>
+          </li>
+          <li class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-plus-circle"></i>
+            </div>
+            <div class="activity-details">
+              <div class="activity-title">New harvest added to SU-002</div>
+              <div class="activity-time">Yesterday, 4:15 PM</div>
+            </div>
+          </li>
+          <li class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-user-plus"></i>
+            </div>
+            <div class="activity-details">
+              <div class="activity-title">New vendor account created</div>
+              <div class="activity-time">Yesterday, 2:30 PM</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Product Distribution -->
+      <div class="widget">
+        <h2><i class="fas fa-boxes"></i> Product Distribution</h2>
+        <div class="product-distribution">
+          <div class="product-item">
+            <span>Grains</span>
+            <div class="product-bar">
+              <div class="product-fill" style="width: 45%"></div>
+            </div>
+            <span class="product-value">45%</span>
+          </div>
+          <div class="product-item">
+            <span>Vegetables</span>
+            <div class="product-bar">
+              <div class="product-fill" style="width: 30%"></div>
+            </div>
+            <span class="product-value">30%</span>
+          </div>
+          <div class="product-item">
+            <span>Fruits</span>
+            <div class="product-bar">
+              <div class="product-fill" style="width: 15%"></div>
+            </div>
+            <span class="product-value">15%</span>
+          </div>
+          <div class="product-item">
+            <span>Other</span>
+            <div class="product-bar">
+              <div class="product-fill" style="width: 10%"></div>
+            </div>
+            <span class="product-value">10%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alert Notifications -->
+      <div class="widget">
+        <h2><i class="fas fa-bell"></i> Active Alerts</h2>
+        <div class="alert-item">
+          <div class="alert-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="alert-message">
+            SU-001 capacity at 85% (Warning)
+          </div>
+          <div class="alert-time">2h ago</div>
+        </div>
+        <div class="alert-item alert-critical">
+          <div class="alert-icon">
+            <i class="fas fa-fire"></i>
+          </div>
+          <div class="alert-message">
+            Temperature spike in SU-003
+          </div>
+          <div class="alert-time">1h ago</div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-icon">
+            <i class="fas fa-tint"></i>
+          </div>
+          <div class="alert-message">
+            High humidity in SU-002
+          </div>
+          <div class="alert-time">4h ago</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js for the capacity chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Sample chart initialization
+    document.addEventListener('DOMContentLoaded', function() {
+      // Capacity Distribution Chart
+      const ctx = document.getElementById('capacity-chart').getContext('2d');
+      const capacityChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['SU-001', 'SU-002', 'SU-003', 'SU-004', 'SU-005', 'SU-006'],
+          datasets: [
+            {
+              label: 'Used Capacity',
+              data: [85, 42, 43, 65, 30, 55],
+              backgroundColor: '#1976d2',
+              borderRadius: 4
+            },
+            {
+              label: 'Available Capacity',
+              data: [15, 58, 57, 35, 70, 45],
+              backgroundColor: '#b3e5fc',
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: '#333'
+              }
+            },
+            tooltip: {
+              callbacks: {
+                afterLabel: function(context) {
+                  const total = context.raw + context.dataset.data[context.dataIndex];
+                  const percent = Math.round((context.raw / total) * 100);
+                  return `Utilization: ${percent}%`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              stacked: true,
+              grid: {
+                display: false
+              }
+            },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                callback: function(value) {
+                  return value + '%';
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Simulate data updates (would be from backend in real app)
+      setInterval(() => {
+        capacityChart.data.datasets.forEach(dataset => {
+          dataset.data = dataset.data.map(value => {
+            const change = Math.random() * 5 - 2.5; // Random change between -2.5 and 2.5
+            return Math.max(5, Math.min(95, value + change));
+          });
+        });
+        capacityChart.update();
+      }, 5000);
+    });
+  </script>
+</body>
+</html>
