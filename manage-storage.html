@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FarmVille - Manage Storage</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #ffffff;
+      color: #333;
+      height: 100vh;
+      display: flex;
+    }
+
+    /* Sidebar Styles */
+    .sidebar {
+      width: 250px;
+      background-color: #b3e5fc;
+      padding: 20px 0;
+      height: 100vh;
+      border-right: 3px solid #1976d2;
+      transition: all 0.3s ease;
+    }
+
+    .logo {
+      text-align: center;
+      padding: 0 20px 20px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #0d47a1;
+      border-bottom: 2px solid #1976d2;
+      margin-bottom: 20px;
+    }
+
+    .logo i {
+      margin-right: 10px;
+      color: #0288d1;
+    }
+
+    .nav-links {
+      padding: 0 20px;
+    }
+
+    .nav-links li {
+      list-style: none;
+      margin-bottom: 10px;
+    }
+
+    .nav-links li a {
+      display: flex;
+      align-items: center;
+      padding: 12px 15px;
+      color: #333;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .nav-links li a:hover,
+    .nav-links li a.active {
+      background-color: #81d4fa;
+      color: #01579b;
+    }
+
+    .nav-links li a i {
+      margin-right: 10px;
+      font-size: 18px;
+      color: #0288d1;
+    }
+
+    /* Main Content Styles */
+    .main-content {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .top-nav {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      background-color: #e1f5fe;
+      padding: 8px 15px;
+      border-radius: 20px;
+      border: 1px solid #1976d2;
+    }
+
+    .user-info .username {
+      margin-right: 10px;
+      color: #0d47a1;
+    }
+
+    .user-info .user-icon i {
+      font-size: 18px;
+      color: #0288d1;
+    }
+
+    /* Page Header */
+    .page-header {
+      margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.8rem;
+      color: #0d47a1;
+      display: flex;
+      align-items: center;
+    }
+
+    .page-header h1 i {
+      margin-right: 10px;
+      color: #0288d1;
+    }
+
+    /* Tabs */
+    .management-tabs {
+      display: flex;
+      border-bottom: 2px solid #b3e5fc;
+      margin-bottom: 2rem;
+    }
+
+    .tab-btn {
+      padding: 12px 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #0d47a1;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+      border-bottom: 3px solid #0288d1;
+      font-weight: 600;
+    }
+
+    .tab-btn:hover:not(.active) {
+      background-color: #e1f5fe;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Tables */
+    .management-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    .management-table th,
+    .management-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #b3e5fc;
+    }
+
+    .management-table th {
+      background-color: #e1f5fe;
+      color: #0d47a1;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+
+    .management-table tr:hover {
+      background-color: #f5fbff;
+    }
+
+    /* Status Badges */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+
+    .status-pending {
+      background-color: #fff3e0;
+      color: #ff6d00;
+    }
+
+    .status-approved {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .status-rejected {
+      background-color: #ffebee;
+      color: #c62828;
+    }
+
+    .status-normal {
+      background-color: #e1f5fe;
+      color: #0288d1;
+    }
+
+    .status-warning {
+      background-color: #fff8e1;
+      color: #ff8f00;
+    }
+
+    .status-critical {
+      background-color: #ffebee;
+      color: #d32f2f;
+    }
+
+    /* Action Buttons */
+    .action-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      border: none;
+      margin-right: 5px;
+    }
+
+    .btn-approve {
+      background-color: #2e7d32;
+      color: white;
+    }
+
+    .btn-reject {
+      background-color: #c62828;
+      color: white;
+    }
+
+    .btn-edit {
+      background-color: #0288d1;
+      color: white;
+    }
+
+    .btn-delete {
+      background-color: #d32f2f;
+      color: white;
+    }
+
+    .btn-view {
+      background-color: #5c6bc0;
+      color: white;
+    }
+
+    /* Forms */
+    .management-form {
+      background: #e1f5fe;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border: 1px solid #81d4fa;
+    }
+
+    .form-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-header h2 {
+      color: #0d47a1;
+      display: flex;
+      align-items: center;
+    }
+
+    .form-header h2 i {
+      margin-right: 10px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #0d47a1;
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: 1px solid #b3e5fc;
+      font-size: 1rem;
+    }
+
+    .form-actions {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background-color: #0288d1;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #0277bd;
+    }
+
+    .btn-secondary {
+      background-color: #e1f5fe;
+      color: #0d47a1;
+      border: 1px solid #0288d1;
+    }
+
+    .btn-secondary:hover {
+      background-color: #b3e5fc;
+    }
+
+    /* Alert Controls */
+    .alert-controls {
+      background: #e1f5fe;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border: 1px solid #81d4fa;
+    }
+
+    .alert-controls h2 {
+      color: #0d47a1;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .alert-controls h2 i {
+      margin-right: 10px;
+    }
+
+    .alert-levels {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .alert-level {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      border: 1px solid #b3e5fc;
+    }
+
+    .alert-level h3 {
+      color: #0d47a1;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .alert-level h3 i {
+      margin-right: 10px;
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 80px;
+        overflow: hidden;
+      }
+
+      .logo span, .nav-links li a span {
+        display: none;
+      }
+
+      .nav-links li a {
+        justify-content: center;
+        padding: 15px 0;
+      }
+
+      .nav-links li a i {
+        margin-right: 0;
+        font-size: 20px;
+      }
+
+      .management-tabs {
+        flex-wrap: wrap;
+      }
+
+      .tab-btn {
+        flex: 1 0 auto;
+        text-align: center;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .management-table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  <div class="sidebar">
+    <div class="logo">
+      <i class="fas fa-store-alt"></i> <span>FarmVille</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+      <li><a href="storage-units.html"><i class="fas fa-warehouse"></i> <span>Storage Units</span></a></li>
+      <li><a href="add-harvest.html"><i class="fas fa-plus-circle"></i> <span>Add Harvest</span></a></li>
+      <li><a href="product-movement.html"><i class="fas fa-exchange-alt"></i> <span>Product Movement</span></a></li>
+      <li><a href="manage-storage.html" class="active"><i class="fas fa-tools"></i> <span>Manage Storage</span></a></li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Top Navigation -->
+    <div class="top-nav">
+      <div class="user-info">
+        <span class="username">Admin</span>
+        <div class="user-icon"><i class="fas fa-user-cog"></i></div>
+      </div>
+    </div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1><i class="fas fa-tools"></i> Manage Storage</h1>
+    </div>
+
+    <!-- Management Tabs -->
+    <div class="management-tabs">
+      <button class="tab-btn active" data-tab="requests">Requests</button>
+      <button class="tab-btn" data-tab="storage-units">Storage Units</button>
+      <button class="tab-btn" data-tab="alerts">Alert Controls</button>
+    </div>
+
+    <!-- Requests Tab -->
+    <div id="requests" class="tab-content active">
+      <h2 style="color: #0d47a1; margin-bottom: 1rem; display: flex; align-items: center;">
+        <i class="fas fa-clipboard-list"></i> Pending Requests
+      </h2>
+      <table class="management-table">
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Type</th>
+            <th>Requester</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>#REQ-1001</td>
+            <td>Vendor Collection</td>
+            <td>FreshMart</td>
+            <td>Red Apples</td>
+            <td>200 kg</td>
+            <td>20 Apr 2025</td>
+            <td><span class="status-badge status-pending">Pending</span></td>
+            <td>
+              <button class="action-btn btn-approve">Approve</button>
+              <button class="action-btn btn-reject">Reject</button>
+              <button class="action-btn btn-view">View</button>
+            </td>
+          </tr>
+          <tr>
+            <td>#REQ-1002</td>
+            <td>Farmer Storage</td>
+            <td>Green Fields</td>
+            <td>Organic Wheat</td>
+            <td>500 kg</td>
+            <td>19 Apr 2025</td>
+            <td><span class="status-badge status-pending">Pending</span></td>
+            <td>
+              <button class="action-btn btn-approve">Approve</button>
+              <button class="action-btn btn-reject">Reject</button>
+              <button class="action-btn btn-view">View</button>
+            </td>
+          </tr>
+          <tr>
+            <td>#REQ-1003</td>
+            <td>Vendor Collection</td>
+            <td>Veggie King</td>
+            <td>Fresh Carrots</td>
+            <td>150 kg</td>
+            <td>18 Apr 2025</td>
+            <td><span class="status-badge status-pending">Pending</span></td>
+            <td>
+              <button class="action-btn btn-approve">Approve</button>
+              <button class="action-btn btn-reject">Reject</button>
+              <button class="action-btn btn-view">View</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 style="color: #0d47a1; margin-bottom: 1rem; display: flex; align-items: center; margin-top: 2rem;">
+        <i class="fas fa-history"></i> Request History
+      </h2>
+      <table class="management-table">
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Type</th>
+            <th>Requester</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Action By</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>#REQ-0999</td>
+            <td>Vendor Collection</td>
+            <td>Farmers Market</td>
+            <td>Bell Peppers</td>
+            <td>100 kg</td>
+            <td>17 Apr 2025</td>
+            <td><span class="status-badge status-approved">Approved</span></td>
+            <td>Admin</td>
+          </tr>
+          <tr>
+            <td>#REQ-0998</td>
+            <td>Farmer Storage</td>
+            <td>Sunny Acres</td>
+            <td>Organic Rice</td>
+            <td>300 kg</td>
+            <td>16 Apr 2025</td>
+            <td><span class="status-badge status-rejected">Rejected</span></td>
+            <td>Admin</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Storage Units Tab -->
+    <div id="storage-units" class="tab-content">
+      <div class="management-form">
+        <div class="form-header">
+          <h2><i class="fas fa-warehouse"></i> Add/Edit Storage Unit</h2>
+        </div>
+        <form id="storageUnitForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="unitName">Unit Name</label>
+              <input type="text" id="unitName" placeholder="e.g. Main Warehouse">
+            </div>
+            <div class="form-group">
+              <label for="unitCode">Unit Code</label>
+              <input type="text" id="unitCode" placeholder="e.g. SU-001">
+            </div>
+            <div class="form-group">
+              <label for="unitType">Storage Type</label>
+              <select id="unitType">
+                <option value="">Select type</option>
+                <option value="cold">Cold Storage</option>
+                <option value="dry">Dry Storage</option>
+                <option value="controlled">Controlled Atmosphere</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="unitCapacity">Total Capacity (kg)</label>
+              <input type="number" id="unitCapacity" placeholder="e.g. 5000">
+            </div>
+            <div class="form-group">
+              <label for="unitLocation">Location</label>
+              <input type="text" id="unitLocation" placeholder="Building/Section">
+            </div>
+            <div class="form-group">
+              <label for="unitManager">Assigned Manager</label>
+              <input type="text" id="unitManager" placeholder="Manager name">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Unit</button>
+          </div>
+        </form>
+      </div>
+
+      <h2 style="color: #0d47a1; margin-bottom: 1rem; display: flex; align-items: center;">
+        <i class="fas fa-warehouse"></i> Current Storage Units
+      </h2>
+      <table class="management-table">
+        <thead>
+          <tr>
+            <th>Unit Code</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Capacity</th>
+            <th>Used</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>SU-001</td>
+            <td>Main Warehouse</td>
+            <td>Dry Storage</td>
+            <td>5,000 kg</td>
+            <td>3,500 kg (70%)</td>
+            <td><span class="status-badge status-warning">Warning</span></td>
+            <td>
+              <button class="action-btn btn-edit">Edit</button>
+              <button class="action-btn btn-delete">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>SU-002</td>
+            <td>East Warehouse</td>
+            <td>Dry Storage</td>
+            <td>3,000 kg</td>
+            <td>1,250 kg (42%)</td>
+            <td><span class="status-badge status-normal">Normal</span></td>
+            <td>
+              <button class="action-btn btn-edit">Edit</button>
+              <button class="action-btn btn-delete">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>SU-003</td>
+            <td>Cold Storage</td>
+            <td>Cold Storage</td>
+            <td>2,000 kg</td>
+            <td>850 kg (43%)</td>
+            <td><span class="status-badge status-normal">Normal</span></td>
+            <td>
+              <button class="action-btn btn-edit">Edit</button>
+              <button class="action-btn btn-delete">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Alert Controls Tab -->
+    <div id="alerts" class="tab-content">
+      <div class="alert-controls">
+        <h2><i class="fas fa-bell"></i> Capacity Alert Thresholds</h2>
+        <div class="alert-levels">
+          <div class="alert-level">
+            <h3><i class="fas fa-check-circle"></i> Normal Level</h3>
+            <div class="form-group">
+              <label for="normalThreshold">Up to (%)</label>
+              <input type="number" id="normalThreshold" value="70" min="0" max="100">
+            </div>
+          </div>
+          <div class="alert-level">
+            <h3><i class="fas fa-exclamation-triangle"></i> Warning Level</h3>
+            <div class="form-group">
+              <label for="warningThreshold">From (%)</label>
+              <input type="number" id="warningThreshold" value="71" min="0" max="100">
+              <label for="warningThresholdMax">To (%)</label>
+              <input type="number" id="warningThresholdMax" value="90" min="0" max="100">
+            </div>
+          </div>
+          <div class="alert-level">
+            <h3><i class="fas fa-times-circle"></i> Critical Level</h3>
+            <div class="form-group">
+              <label for="criticalThreshold">Above (%)</label>
+              <input type="number" id="criticalThreshold" value="90" min="0" max="100">
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary">Reset Defaults</button>
+          <button type="button" class="btn btn-primary">Save Thresholds</button>
+        </div>
+      </div>
+
+      <h2 style="color: #0d47a1; margin-bottom: 1rem; display: flex; align-items: center;">
+        <i class="fas fa-bell-slash"></i> Alert Notifications
+      </h2>
+      <table class="management-table">
+        <thead>
+          <tr>
+            <th>Alert ID</th>
+            <th>Storage Unit</th>
+            <th>Alert Type</th>
+            <th>Current Capacity</th>
+            <th>Date/Time</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>#ALERT-1001</td>
+            <td>SU-001 (Main)</td>
+            <td>Capacity Warning</td>
+            <td>3,500 kg (70%)</td>
+            <td>20 Apr 2025, 09:15</td>
+            <td><span class="status-badge status-warning">Active</span></td>
+            <td>
+              <button class="action-btn btn-edit">Acknowledge</button>
+            </td>
+          </tr>
+          <tr>
+            <td>#ALERT-0999</td>
+            <td>SU-003 (Cold)</td>
+            <td>Temperature Fluctuation</td>
+            <td>4°C (High)</td>
+            <td>18 Apr 2025, 14:30</td>
+            <td><span class="status-badge status-normal">Resolved</span></td>
+            <td>
+              <button class="action-btn btn-view">Details</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Tab functionality
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        // Remove active class from all tabs and content
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked tab
+        this.classList.add('active');
+        const tabId = this.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+
+    // Form submission (simulated)
+    document.getElementById('storageUnitForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Storage unit saved successfully!');
+      this.reset();
+    });
+
+    // Alert threshold saving
+    document.querySelector('#alerts .btn-primary').addEventListener('click', function() {
+      alert('Alert thresholds updated successfully!');
+    });
+
+    // Request actions
+    document.querySelectorAll('.btn-approve').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const row = this.closest('tr');
+        row.querySelector('.status-badge').className = 'status-badge status-approved';
+        row.querySelector('.status-badge').textContent = 'Approved';
+        alert('Request approved successfully!');
+      });
+    });
+
+    document.querySelectorAll('.btn-reject').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const row = this.closest('tr');
+        row.querySelector('.status-badge').className = 'status-badge status-rejected';
+        row.querySelector('.status-badge').textContent = 'Rejected';
+        alert('Request rejected successfully!');
+      });
+    });
+
+    // Storage unit edit
+    document.querySelectorAll('.btn-edit').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const row = this.closest('tr');
+        const cells = row.querySelectorAll('td');
+        
+        // Populate form with unit data (simulated)
+        document.getElementById('unitCode').value = cells[0].textContent;
+        document.getElementById('unitName').value = cells[1].textContent;
+        document.getElementById('unitType').value = cells[2].textContent.toLowerCase().replace(' ', '-');
+        document.getElementById('unitCapacity').value = cells[3].textContent.split(' ')[0].replace(/,/g, '');
+        
+        // Switch to storage units tab
+        document.querySelector('[data-tab="storage-units"]').click();
+      });
+    });
+
+    // Storage unit delete
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.addEventListener('click', function() {
+        if (confirm('Are you sure you want to delete this storage unit?')) {
+          const row = this.closest('tr');
+          row.remove();
+          alert('Storage unit deleted successfully!');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

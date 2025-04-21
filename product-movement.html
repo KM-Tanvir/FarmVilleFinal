@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FarmVille - Product Movement</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #ffffff;
+      color: #333;
+      height: 100vh;
+      display: flex;
+    }
+
+    /* Sidebar Styles */
+    .sidebar {
+      width: 250px;
+      background-color: #b3e5fc;
+      padding: 20px 0;
+      height: 100vh;
+      border-right: 3px solid #1976d2;
+      transition: all 0.3s ease;
+    }
+
+    .logo {
+      text-align: center;
+      padding: 0 20px 20px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #0d47a1;
+      border-bottom: 2px solid #1976d2;
+      margin-bottom: 20px;
+    }
+
+    .logo i {
+      margin-right: 10px;
+      color: #0288d1;
+    }
+
+    .nav-links {
+      padding: 0 20px;
+    }
+
+    .nav-links li {
+      list-style: none;
+      margin-bottom: 10px;
+    }
+
+    .nav-links li a {
+      display: flex;
+      align-items: center;
+      padding: 12px 15px;
+      color: #333;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .nav-links li a:hover,
+    .nav-links li a.active {
+      background-color: #81d4fa;
+      color: #01579b;
+    }
+
+    .nav-links li a i {
+      margin-right: 10px;
+      font-size: 18px;
+      color: #0288d1;
+    }
+
+    /* Main Content Styles */
+    .main-content {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .top-nav {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      background-color: #e1f5fe;
+      padding: 8px 15px;
+      border-radius: 20px;
+      border: 1px solid #1976d2;
+    }
+
+    .user-info .username {
+      margin-right: 10px;
+      color: #0d47a1;
+    }
+
+    .user-info .user-icon i {
+      font-size: 18px;
+      color: #0288d1;
+    }
+
+    /* Page Header */
+    .page-header {
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.8rem;
+      color: #0d47a1;
+      display: flex;
+      align-items: center;
+    }
+
+    .page-header h1 i {
+      margin-right: 10px;
+      color: #0288d1;
+    }
+
+    /* Search and Filter */
+    .search-filter {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 250px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 40px;
+      border-radius: 8px;
+      border: 1px solid #b3e5fc;
+      font-size: 1rem;
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #0288d1;
+    }
+
+    .filter-dropdown {
+      min-width: 200px;
+    }
+
+    .filter-dropdown select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #b3e5fc;
+      font-size: 1rem;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230288d1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      background-size: 1em;
+    }
+
+    /* Stock Table */
+    .stock-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    .stock-table th,
+    .stock-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #b3e5fc;
+    }
+
+    .stock-table th {
+      background-color: #e1f5fe;
+      color: #0d47a1;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+
+    .stock-table tr:hover {
+      background-color: #f5fbff;
+    }
+
+    .product-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .product-icon {
+      color: #0288d1;
+      font-size: 1.2rem;
+    }
+
+    .action-btn {
+      background-color: #0288d1;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.3s ease;
+    }
+
+    .action-btn:hover {
+      background-color: #0277bd;
+    }
+
+    /* Collection Form */
+    .collection-form {
+      background: #e1f5fe;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border: 1px solid #81d4fa;
+    }
+
+    .collection-form h2 {
+      color: #0d47a1;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .collection-form h2 i {
+      margin-right: 10px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #0d47a1;
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: 1px solid #b3e5fc;
+      font-size: 1rem;
+    }
+
+    .form-actions {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background-color: #0288d1;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #0277bd;
+    }
+
+    .btn-secondary {
+      background-color: #e1f5fe;
+      color: #0d47a1;
+      border: 1px solid #0288d1;
+    }
+
+    .btn-secondary:hover {
+      background-color: #b3e5fc;
+    }
+
+    /* Movement Table */
+    .movement-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    .movement-table th,
+    .movement-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #b3e5fc;
+    }
+
+    .movement-table th {
+      background-color: #e1f5fe;
+      color: #0d47a1;
+      font-weight: 600;
+    }
+
+    .movement-table tr:hover {
+      background-color: #f5fbff;
+    }
+
+    .movement-type {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+
+    .type-in {
+      background-color: #e1f5fe;
+      color: #0288d1;
+    }
+
+    .type-out {
+      background-color: #ffebee;
+      color: #f44336;
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 80px;
+        overflow: hidden;
+      }
+
+      .logo span, .nav-links li a span {
+        display: none;
+      }
+
+      .nav-links li a {
+        justify-content: center;
+        padding: 15px 0;
+      }
+
+      .nav-links li a i {
+        margin-right: 0;
+        font-size: 20px;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .stock-table, .movement-table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  <div class="sidebar">
+    <div class="logo">
+      <i class="fas fa-store-alt"></i> <span>FarmVille</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+      <li><a href="storage-units.html"><i class="fas fa-warehouse"></i> <span>Storage Units</span></a></li>
+      <li><a href="add-harvest.html"><i class="fas fa-plus-circle"></i> <span>Add Harvest</span></a></li>
+      <li><a href="product-movement.html" class="active"><i class="fas fa-exchange-alt"></i> <span>Product Movement</span></a></li>
+      <li><a href="manage-storage.html"><i class="fas fa-tools"></i> <span>Manage Storage</span></a></li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Top Navigation -->
+    <div class="top-nav">
+      <div class="user-info">
+        <span class="username">Admin</span>
+        <div class="user-icon"><i class="fas fa-user-tie"></i></div>
+      </div>
+    </div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1><i class="fas fa-exchange-alt"></i> Product Movement</h1>
+      <div class="search-filter">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search products..." id="productSearch">
+        </div>
+        <div class="filter-dropdown">
+          <select id="storageFilter">
+            <option value="">All Storage Units</option>
+            <option value="su-001">Main Warehouse</option>
+            <option value="su-002">East Warehouse</option>
+            <option value="su-003">Cold Storage</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Available Stock Table -->
+    <h2 style="color: #0d47a1; margin-bottom: 1rem; display: flex; align-items: center;">
+      <i class="fas fa-boxes"></i> Available Stock
+    </h2>
+    <table class="stock-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Type</th>
+          <th>Available Qty (kg)</th>
+          <th>Storage Unit</th>
+          <th>Harvest Date</th>
+          <th>Quality Grade</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="product-cell">
+            <i class="fas fa-carrot product-icon"></i>
+            <span>Fresh Carrots</span>
+          </td>
+          <td>Vegetable</td>
+          <td>1,250</td>
+          <td>SU-002 (East)</td>
+          <td>15 Apr 2025</td>
+          <td>Premium</td>
+          <td><button class="action-btn">Request</button></td>
+        </tr>
+        <tr>
+          <td class="product-cell">
+            <i class="fas fa-apple-alt product-icon"></i>
+            <span>Red Apples</span>
+          </td>
+          <td>Fruit</td>
+          <td>850</td>
+          <td>SU-003 (Cold)</td>
+          <td>10 Apr 2025</td>
+          <td>Grade 1</td>
+          <td><button class="action-btn">Request</button></td>
+        </tr>
+        <tr>
+          <td class="product-cell">
+            <i class="fas fa-wheat-awn product-icon"></i>
+            <span>Organic Wheat</span>
+          </td>
+          <td>Grain</td>
+          <td>3,500</td>
+          <td>SU-001 (Main)</td>
+          <td>5 Apr 2025</td>
+          <td>Grade 2</td>
+          <td><button class="action-btn">Request</button></td>
+        </tr>
+        <tr>
+          <td class="product-cell">
+            <i class="fas fa-pepper-hot product-icon"></i>
+            <span>Bell Peppers</span>
+          </td>
+          <td>Vegetable</td>
+          <td>720</td>
+          <td>SU-002 (East)</td>
+          <td>12 Apr 2025</td>
+          <td>Premium</td>
+          <td><button class="action-btn">Request</button></td>
+        </tr>
+        <tr>
+          <td class="product-cell">
+            <i class="fas fa-seedling product-icon"></i>
+            <span>Organic Rice</span>
+          </td>
+          <td>Grain</td>
+          <td>2,800</td>
+          <td>SU-001 (Main)</td>
+          <td>8 Apr 2025</td>
+          <td>Grade 1</td>
+          <td><button class="action-btn">Request</button></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Collection Request Form -->
+    <div class="collection-form">
+      <h2><i class="fas fa-truck-loading"></i> Collection Request</h2>
+      <form id="collectionForm">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="vendorName">Vendor Name</label>
+            <input type="text" id="vendorName" placeholder="Your company name" required>
+          </div>
+          <div class="form-group">
+            <label for="vendorContact">Contact Number</label>
+            <input type="tel" id="vendorContact" placeholder="Your contact number" required>
+          </div>
+          <div class="form-group">
+            <label for="productSelect">Product</label>
+            <select id="productSelect" required>
+              <option value="">Select product</option>
+              <option value="carrots">Fresh Carrots</option>
+              <option value="apples">Red Apples</option>
+              <option value="wheat">Organic Wheat</option>
+              <option value="peppers">Bell Peppers</option>
+              <option value="rice">Organic Rice</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="quantityReq">Quantity (kg)</label>
+            <input type="number" id="quantityReq" placeholder="Requested quantity" required>
+          </div>
+          <div class="form-group">
+            <label for="collectionDate">Collection Date</label>
+            <input type="date" id="collectionDate" required>
+          </div>
+          <div class="form-group">
+            <label for="collectionTime">Collection Time</label>
+            <input type="time" id="collectionTime" required>
+          </div>
+          <div class="form-group" style="grid-column: 1 / -1">
+            <label for="specialNotes">Special Instructions</label>
+            <textarea id="specialNotes" placeholder="Any special requirements"></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary">Clear</button>
+          <button type="submit" class="btn btn-primary">Submit Request</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Movement History Table -->
+    <h2 style="color: #0d47a1; margin-bottom: 1rem; display: flex; align-items: center;">
+      <i class="fas fa-history"></i> Recent Movements
+    </h2>
+    <table class="movement-table">
+      <thead>
+        <tr>
+          <th>Date/Time</th>
+          <th>Product</th>
+          <th>Type</th>
+          <th>Quantity</th>
+          <th>Storage Unit</th>
+          <th>Vendor/Supplier</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>20 Apr 2025, 10:30</td>
+          <td>Red Apples</td>
+          <td><span class="movement-type type-out">OUT</span></td>
+          <td>200 kg</td>
+          <td>SU-003 (Cold)</td>
+          <td>FreshMart</td>
+        </tr>
+        <tr>
+          <td>19 Apr 2025, 14:15</td>
+          <td>Organic Wheat</td>
+          <td><span class="movement-type type-in">IN</span></td>
+          <td>500 kg</td>
+          <td>SU-001 (Main)</td>
+          <td>Farm Co-op</td>
+        </tr>
+        <tr>
+          <td>18 Apr 2025, 09:45</td>
+          <td>Fresh Carrots</td>
+          <td><span class="movement-type type-out">OUT</span></td>
+          <td>150 kg</td>
+          <td>SU-002 (East)</td>
+          <td>Veggie King</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Simple search functionality
+    document.getElementById('productSearch').addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      const rows = document.querySelectorAll('.stock-table tbody tr');
+      
+      rows.forEach(row => {
+        const productName = row.querySelector('.product-cell span').textContent.toLowerCase();
+        if (productName.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+
+    // Request button functionality
+    document.querySelectorAll('.action-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const row = this.closest('tr');
+        const productName = row.querySelector('.product-cell span').textContent;
+        document.getElementById('productSelect').value = productName.toLowerCase().replace(' ', '-');
+        document.getElementById('quantityReq').focus();
+      });
+    });
+
+    // Form submission
+    document.getElementById('collectionForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Collection request submitted successfully!');
+      this.reset();
+    });
+
+    // Clear form
+    document.querySelector('.btn-secondary').addEventListener('click', function() {
+      document.getElementById('collectionForm').reset();
+    });
+  </script>
+</body>
+</html>
