@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supply Levels | Admin Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+    }
+
+    .sidebar {
+      width: 240px;
+      background-color: #f8f9fa;
+      height: 100vh;
+      transition: width 0.3s;
+      overflow: hidden;
+      position: fixed;
+      border-right: 1px solid #e0e0e0;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar.collapsed {
+      width: 60px;
+    }
+
+    .toggle-btn {
+      background-color: #4088f5;
+      color: white;
+      border: none;
+      width: 100%;
+      padding: 15px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .toggle-btn span {
+      font-size: 20px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+      margin-top: 10px;
+    }
+
+    li {
+      padding: 5px;
+      display: flex;
+      align-items: center;
+    }
+
+    li:hover {
+      background-color: #dee2e6;
+    }
+
+    li .icon {
+      margin-right: 10px;
+      font-size: 18px;
+    }
+
+    .collapsed .text {
+      display: none;
+    }
+
+    .main-content {
+      margin-left: 240px;
+      padding: 20px;
+      transition: margin-left 0.3s;
+      width: 100%;
+    }
+
+    .collapsed ~ .main-content {
+      margin-left: 60px;
+    }
+
+    a {
+      text-decoration: none;
+      color: black;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      margin: 5px;
+      padding: 7px;
+      border-radius: 7px;
+    }
+
+    .sidebar a.active {
+      background-color: #3482f8;
+      color: white;
+      font-weight: bold;
+    }
+
+    .admin-container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 1000px;
+      margin: 20px auto;
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .admin-header h1 {
+      color: #333;
+      font-size: 24px;
+    }
+
+    .admin-content {
+      margin-top: 20px;
+    }
+
+    .section-title {
+      margin: 20px 0 10px;
+      color: #4088f5;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+
+    .btn {
+      padding: 10px 15px;
+      background-color: #4088f5;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #3373d9;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+    }
+
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+
+    .dashboard-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .stat-card h3 {
+      color: #4088f5;
+      font-size: 28px;
+      margin-bottom: 5px;
+    }
+
+    .stat-card p {
+      color: #666;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    table th, table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    table th {
+      background-color: #f8f9fa;
+      color: #333;
+      font-weight: bold;
+    }
+
+    table tr:hover {
+      background-color: #f5f5f5;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 5px;
+    }
+
+    .action-btn {
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .edit-btn {
+      background-color: #28a745;
+      color: white;
+      border: none;
+    }
+
+    .delete-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+    }
+
+    /* Supply level specific styles */
+    .inventory-filters {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+    }
+
+    .filter-group label {
+      margin-right: 8px;
+      font-weight: bold;
+    }
+
+    .filter-group select, .filter-group input {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+
+    .storage-status {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .status-good {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .status-warning {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+
+    .status-critical {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      background-color: #e9ecef;
+      border-radius: 4px;
+      height: 10px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 4px;
+    }
+
+    .progress-high {
+      background-color: #28a745;
+      width: 90%;
+    }
+
+    .progress-medium {
+      background-color: #ffc107;
+      width: 60%;
+    }
+
+    .progress-low {
+      background-color: #dc3545;
+      width: 30%;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-stats {
+        grid-template-columns: 1fr;
+      }
+      .inventory-filters {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <button class="toggle-btn" onclick="toggleSidebar()">
+      <span>☰</span>
+    </button>
+    <ul>
+      <li>
+        <a href="Admin_Dashboard.html">
+          <span class="icon">📊</span>
+          <span class="text">Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a href="Farmer_Management.html">
+          <span class="icon">👨‍🌾</span>
+          <span class="text">Farmer Management</span>
+        </a>
+      </li>
+      <li>
+        <a href="Admin_Product_Information.html">
+          <span class="icon">🌽</span>
+          <span class="text">Product Information</span>
+        </a>
+      </li>
+      <li>
+        <a href="Admin_Historical_Production.html">
+          <span class="icon">📈</span>
+          <span class="text">Historical Production</span>
+        </a>
+      </li>
+      <li>
+        <a href="Inventory_Management.html" class="active">
+          <span class="icon">📦</span>
+          <span class="text">Supply Levels</span>
+        </a>
+      </li>
+      <li>
+        <a href="Market_Prices.html">
+          <span class="icon">💰</span>
+          <span class="text">Market Prices</span>
+        </a>
+      </li>
+      <li>
+        <a href="Buyer_Seller_Directory.html">
+          <span class="icon">👥</span>
+          <span class="text">Buyer/Seller Directory</span>
+        </a>
+      </li>
+      <li>
+        <a href="Reports.html">
+          <span class="icon">📁</span>
+          <span class="text">Reports</span>
+        </a>
+      </li>
+      <li>
+        <a href="Settings.html">
+          <span class="icon">⚙️</span>
+          <span class="text">Settings</span>
+        </a>
+      </li>
+      <li>
+        <a href="Login_Page.html">
+          <span class="icon">⏻</span>
+          <span class="text">Sign Out</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <div class="admin-container">
+      <div class="admin-header">
+        <h1>Supply Levels</h1>
+        <div>
+          <span id="current-date"></span>
+        </div>
+      </div>
+
+      <div class="admin-content">
+        <div class="dashboard-stats">
+          <div class="stat-card">
+            <h3>83%</h3>
+            <p>Storage Capacity Used</p>
+          </div>
+          <div class="stat-card">
+            <h3>4</h3>
+            <p>Pending Shipments</p>
+          </div>
+          <div class="stat-card">
+            <h3>7</h3>
+            <p>Low Stock Items</p>
+          </div>
+        </div>
+
+        <div class="inventory-filters">
+          <div class="filter-group">
+            <label for="product-filter">Product:</label>
+            <select id="product-filter">
+              <option value="">All Products</option>
+              <option value="corn">Corn</option>
+              <option value="wheat">Wheat</option>
+              <option value="soybeans">Soybeans</option>
+              <option value="vegetables">Vegetables</option>
+              <option value="fruits">Fruits</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="storage-filter">Storage:</label>
+            <select id="storage-filter">
+              <option value="">All Locations</option>
+              <option value="main-warehouse">Main Warehouse</option>
+              <option value="cold-storage">Cold Storage</option>
+              <option value="silo-1">Silo 1</option>
+              <option value="silo-2">Silo 2</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="status-filter">Status:</label>
+            <select id="status-filter">
+              <option value="">All Status</option>
+              <option value="good">Good Level</option>
+              <option value="warning">Warning Level</option>
+              <option value="critical">Critical Level</option>
+            </select>
+          </div>
+          <button class="btn" onclick="applyFilters()">Apply Filters</button>
+        </div>
+
+        <h3 class="section-title">Current Inventory</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Storage Location</th>
+              <th>Current Level</th>
+              <th>Capacity</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Corn</td>
+              <td>Silo 1</td>
+              <td>25,400 lbs</td>
+              <td>40,000 lbs</td>
+              <td>
+                <span class="storage-status status-good">Good</span>
+                <div class="progress-bar-container">
+                  <div class="progress-bar progress-medium"></div>
+                </div>
+              </td>
+              <td class="action-buttons">
+                <button class="action-btn edit-btn">Update</button>
+                <button class="action-btn btn-secondary">Move</button>
+              </td>
+            </tr>
+            <tr>
+              <td>Wheat</td>
+              <td>Silo 2</td>
+              <td>36,700 lbs</td>
+              <td>40,000 lbs</td>
+              <td>
+                <span class="storage-status status-warning">Warning</span>
+                <div class="progress-bar-container">
+                  <div class="progress-bar progress-high"></div>
+                </div>
+              </td>
+              <td class="action-buttons">
+                <button class="action-btn edit-btn">Update</button>
+                <button class="action-btn btn-secondary">Move</button>
+              </td>
+            </tr>
+            <tr>
+              <td>Apples</td>
+              <td>Cold Storage</td>
+              <td>1,050 boxes</td>
+              <td>5,000 boxes</td>
+              <td>
+                <span class="storage-status status-good">Good</span>
+                <div class="progress-bar-container">
+                  <div class="progress-bar progress-medium"></div>
+                </div>
+              </td>
+              <td class="action-buttons">
+                <button class="action-btn edit-btn">Update</button>
+                <button class="action-btn btn-secondary">Move</button>
+              </td>
+            </tr>
+            <tr>
+              <td>Soybeans</td>
+              <td>Main Warehouse</td>
+              <td>2,340 lbs</td>
+              <td>15,000 lbs</td>
+              <td>
+                <span class="storage-status status-critical">Critical</span>
+                <div class="progress-bar-container">
+                  <div class="progress-bar progress-low"></div>
+                </div>
+              </td>
+              <td class="action-buttons">
+                <button class="action-btn edit-btn">Update</button>
+                <button class="action-btn btn-secondary">Move</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 class="section-title">Upcoming Logistics</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Product</th>
+              <th>Quantity</th>
+              <th>Origin</th>
+              <th>Destination</th>
+              <th>Expected Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>SH-1045</td>
+              <td>Corn</td>
+              <td>12,000 lbs</td>
+              <td>Green Valley Farm</td>
+              <td>Main Warehouse</td>
+              <td>Apr 25, 2025</td>
+              <td><span class="storage-status status-good">On Schedule</span></td>
+            </tr>
+            <tr>
+              <td>SH-1046</td>
+              <td>Soybeans</td>
+              <td>8,500 lbs</td>
+              <td>Rodriguez Farm</td>
+              <td>Main Warehouse</td>
+              <td>Apr 26, 2025</td>
+              <td><span class="storage-status status-warning">Delayed</span></td>
+            </tr>
+            <tr>
+              <td>SH-1047</td>
+              <td>Apples</td>
+              <td>450 boxes</td>
+              <td>Cold Storage</td>
+              <td>Midwest Market</td>
+              <td>Apr 24, 2025</td>
+              <td><span class="storage-status status-good">Ready</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("collapsed");
+    }
+    
+    // Set current date
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', options);
+
+    // Filter functionality
+    function applyFilters() {
+      const product = document.getElementById('product-filter').value;
+      const storage = document.getElementById('storage-filter').value;
+      const status = document.getElementById('status-filter').value;
+      
+      // This would normally send a request to the server
+      alert(`Filters applied: Product=${product}, Storage=${storage}, Status=${status}`);
+      // In a real implementation, this would refresh the table with filtered data
+    }
+  </script>
+</body>
+</html>
