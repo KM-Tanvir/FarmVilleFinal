@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FarmVille — Market Insights</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #2c8dad;
+      --secondary: #1f408e;
+      --dark: #120854;
+      --light: #f8f9fa;
+      --success: #28a745;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --info: #17a2b8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      color: #2c3e50;
+      line-height: 1.6;
+      font-size: 16px;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ===== HEADER & NAVIGATION ===== */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to right, var(--dark), var(--secondary));
+      color: white;
+      padding: 15px 5%;
+      flex-wrap: wrap;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      position: relative;
+      z-index: 100;
+    }
+
+    .logo-img {
+      height: 150px;
+      transition: transform 0.3s ease;
+    }
+
+    .logo-img:hover {
+      transform: scale(1.05);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 25px;
+    }
+
+    .cart-icon {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .cart-icon a {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: white;
+      transition: transform 0.3s ease;
+    }
+
+    .cart-icon a:hover {
+      transform: translateY(-3px);
+    }
+
+    .cart-icon svg {
+      width: 24px;
+      height: 24px;
+      fill: white;
+    }
+
+    .cart-count {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background-color: var(--danger);
+      color: white;
+      border-radius: 50%;
+      padding: 3px 8px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .account-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+
+    .account-icon:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(255,255,255,0.4);
+    }
+
+    /* ===== SIDEBAR STYLES ===== */
+    .sidebar {
+      height: 100%;
+      width: 0;
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      left: 0;
+      background: linear-gradient(to bottom, var(--dark), var(--secondary));
+      overflow-x: hidden;
+      transition: 0.4s;
+      padding-top: 120px;
+      box-shadow: 5px 0 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar a {
+      padding: 15px 25px;
+      text-decoration: none;
+      font-size: 18px;
+      color: white;
+      display: block;
+      transition: 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sidebar a::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: 0.5s;
+    }
+
+    .sidebar a:hover::before {
+      left: 100%;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar a.active {
+      font-weight: 600;
+      background-color: rgba(255, 255, 255, 0.15);
+      border-left: 4px solid var(--primary);
+    }
+
+    .sidebar a i {
+      margin-right: 10px;
+      width: 25px;
+      text-align: center;
+    }
+
+    .sidebar-toggle {
+      position: fixed;
+      top: 120px;
+      left: 0;
+      width: 45px;
+      height: 45px;
+      background-color: var(--secondary);
+      color: white;
+      border-radius: 0 8px 8px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 999;
+      box-shadow: 3px 0 10px rgba(0, 0, 0, 0.2);
+      transition: all 0.4s ease;
+      font-size: 1.5rem;
+    }
+
+    .sidebar-toggle:hover {
+      background-color: var(--dark);
+      transform: translateX(5px);
+    }
+
+    .main-content {
+      transition: margin-left 0.4s;
+      padding: 30px 5%;
+      position: relative;
+    }
+
+    body.sidebar-open .main-content {
+      margin-left: 280px;
+    }
+
+    body.sidebar-open .sidebar {
+      width: 280px;
+    }
+
+    body.sidebar-open .sidebar-toggle {
+      left: 280px;
+    }
+
+    /* ===== CONTENT STYLES ===== */
+    .content-box {
+      background-color: white;
+      margin: 30px auto;
+      padding: 30px;
+      width: 100%;
+      max-width: 1200px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .content-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5px;
+      height: 100%;
+      background: linear-gradient(to bottom, var(--primary), var(--secondary));
+      transition: width 0.3s ease;
+    }
+
+    .content-box:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+    }
+
+    .content-box:hover::before {
+      width: 8px;
+    }
+
+    .content-box h2 {
+      margin-bottom: 20px;
+      color: var(--dark);
+      position: relative;
+      display: inline-block;
+    }
+
+    .content-box h2::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      border-radius: 3px;
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .data-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin: 25px 0;
+      text-align: left;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 15px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .data-table th {
+      background: linear-gradient(to right, var(--secondary), var(--primary));
+      color: white;
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+
+    .data-table tr:nth-child(even) {
+      background-color: rgba(44, 141, 173, 0.03);
+    }
+
+    .data-table tr:hover {
+      background-color: rgba(44, 141, 173, 0.08);
+    }
+
+    /* ===== CHART STYLES ===== */
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      margin: 30px 0;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: 100% !important;
+      width: 100% !important;
+    }
+
+    /* ===== FOOTER STYLES ===== */
+    footer {
+      background: linear-gradient(to right, var(--dark), var(--secondary));
+      color: white;
+      padding: 40px 5%;
+      font-size: 14px;
+      margin-top: 60px;
+      position: relative;
+    }
+
+    footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      background: linear-gradient(to right, var(--primary), #4ecdc4);
+    }
+
+    .footer-content {
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 40px;
+      text-align: left;
+    }
+
+    .footer-section {
+      flex: 1 1 200px;
+      min-width: 200px;
+    }
+
+    .footer-section h4 {
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: white;
+      font-size: 1.1rem;
+      position: relative;
+      display: inline-block;
+    }
+
+    .footer-section h4::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 40px;
+      height: 2px;
+      background: var(--primary);
+    }
+
+    .footer-content p,
+    .footer-content a {
+      color: rgba(255, 255, 255, 0.8);
+      margin: 8px 0;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      display: block;
+    }
+
+    .footer-content a:hover {
+      color: white;
+      transform: translateX(5px);
+    }
+
+    .social-icons {
+      display: flex;
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .social-icons a {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .social-icons a:hover {
+      background: var(--primary);
+      transform: translateY(-3px);
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    section, button, a.btn {
+      animation: fadeIn 0.8s ease-out forwards;
+    }
+
+    /* ===== RESPONSIVE STYLES ===== */
+    @media (max-width: 992px) {
+      .navbar {
+        flex-direction: column;
+        padding: 15px;
+      }
+      
+      .header-right {
+        margin-top: 15px;
+      }
+      
+      body.sidebar-open .main-content {
+        margin-left: 0;
+      }
+      
+      body.sidebar-open .sidebar {
+        width: 250px;
+      }
+      
+      body.sidebar-open .sidebar-toggle {
+        left: 250px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .data-table {
+        display: block;
+        overflow-x: auto;
+      }
+      
+      .data-table td {
+        min-width: 120px;
+      }
+      
+      .sidebar {
+        padding-top: 100px;
+      }
+      
+      .sidebar-toggle {
+        top: 100px;
+      }
+      
+      .chart-container {
+        height: 400px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .data-table td {
+        display: block;
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+      }
+      
+      .data-table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 15px;
+        width: 45%;
+        padding-right: 10px;
+        text-align: left;
+        font-weight: bold;
+      }
+      
+      .data-table th {
+        display: none;
+      }
+      
+      .chart-container {
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="logo">
+    <img src="farmville-logo.png" alt="FarmVille Logo" class="logo-img" />
+  </div>
+  
+  <div class="header-right">
+    <div class="cart-icon">
+      <a href="customer-order-history.html#cart" title="Shopping Cart">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+        </svg>
+        <span class="cart-count" id="cartCount">0</span>
+      </a>
+    </div>
+    
+    <a href="/customer-info.html" title="My Account">
+      <img src="account-icon.png" alt="My Account" class="account-icon">
+    </a>
+  </div>
+</header>
+
+<!-- Sidebar Navigation -->
+<div class="sidebar" id="sidebar">
+  <a href="customer-homepage.html"><i class="fas fa-home"></i> Home</a>
+  <a href="customer-product-catalog.html"><i class="fas fa-shopping-basket"></i> Browse Products</a>
+  <a href="customer-market-insights.html" class="active"><i class="fas fa-chart-line"></i> Market Insights</a>
+  <a href="customer-order-history.html"><i class="fas fa-history"></i> My Orders</a>
+  <a href="customer-feedback.html"><i class="fas fa-comment-alt"></i> Feedbacks</a>
+  <a href="login.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+
+<!-- Sidebar Toggle Button -->
+<div class="sidebar-toggle" id="sidebarToggle">
+  <i class="fas fa-bars"></i>
+</div>
+
+<!-- Main Content Wrapper -->
+<div class="main-content">
+  <section class="content-box">
+    <h2><i class="fas fa-chart-bar"></i> Crop Prices (Last 7 Days)</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Crop</th>
+          <th>Day 1</th>
+          <th>Day 2</th>
+          <th>Day 3</th>
+          <th>Day 4</th>
+          <th>Day 5</th>
+          <th>Day 6</th>
+          <th>Day 7</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Crop">Coarse Rice</td>
+          <td data-label="Day 1">50৳</td>
+          <td data-label="Day 2">51৳</td>
+          <td data-label="Day 3">52৳</td>
+          <td data-label="Day 4">52৳</td>
+          <td data-label="Day 5">53৳</td>
+          <td data-label="Day 6">53৳</td>
+          <td data-label="Day 7">54৳</td>
+        </tr>
+        <tr>
+          <td data-label="Crop">Fine Rice</td>
+          <td data-label="Day 1">65৳</td>
+          <td data-label="Day 2">66৳</td>
+          <td data-label="Day 3">66৳</td>
+          <td data-label="Day 4">67৳</td>
+          <td data-label="Day 5">67৳</td>
+          <td data-label="Day 6">68৳</td>
+          <td data-label="Day 7">68৳</td>
+        </tr>
+        <tr>
+          <td data-label="Crop">Wheat Flour (Atta)</td>
+          <td data-label="Day 1">62৳</td>
+          <td data-label="Day 2">63৳</td>
+          <td data-label="Day 3">63৳</td>
+          <td data-label="Day 4">64৳</td>
+          <td data-label="Day 5">64৳</td>
+          <td data-label="Day 6">64৳</td>
+          <td data-label="Day 7">65৳</td>
+        </tr>
+        <tr>
+          <td data-label="Crop">Lentils (Masoor Dal)</td>
+          <td data-label="Day 1">125৳</td>
+          <td data-label="Day 2">126৳</td>
+          <td data-label="Day 3">127৳</td>
+          <td data-label="Day 4">128৳</td>
+          <td data-label="Day 5">129৳</td>
+          <td data-label="Day 6">130৳</td>
+          <td data-label="Day 7">130৳</td>
+        </tr>
+        <tr>
+          <td data-label="Crop">Green Grams (Moong Dal)</td>
+          <td data-label="Day 1">115৳</td>
+          <td data-label="Day 2">116৳</td>
+          <td data-label="Day 3">117৳</td>
+          <td data-label="Day 4">118৳</td>
+          <td data-label="Day 5">119৳</td>
+          <td data-label="Day 6">120৳</td>
+          <td data-label="Day 7">121৳</td>
+        </tr>
+        <tr>
+          <td data-label="Crop">Soybean Oil</td>
+          <td data-label="Day 1">175৳</td>
+          <td data-label="Day 2">176৳</td>
+          <td data-label="Day 3">177৳</td>
+          <td data-label="Day 4">178৳</td>
+          <td data-label="Day 5">179৳</td>
+          <td data-label="Day 6">180৳</td>
+          <td data-label="Day 7">180৳</td>
+        </tr>
+        <tr>
+          <td data-label="Crop">Mustard Oil</td>
+          <td data-label="Day 1">225৳</td>
+          <td data-label="Day 2">226৳</td>
+          <td data-label="Day 3">227৳</td>
+          <td data-label="Day 4">228৳</td>
+          <td data-label="Day 5">229৳</td>
+          <td data-label="Day 6">230৳</td>
+          <td data-label="Day 7">230৳</td>
+        </tr>
+        <tr>
+          <td data-label="Crop">Potatoes</td>
+          <td data-label="Day 1">70৳</td>
+          <td data-label="Day 2">71৳</td>
+          <td data-label="Day 3">72৳</td>
+          <td data-label="Day 4">73৳</td>
+          <td data-label="Day 5">74৳</td>
+          <td data-label="Day 6">75৳</td>
+          <td data-label="Day 7">75৳</td>
+        </tr>
+        <tr>
+          <td data-label="Crop">Onions</td>
+          <td data-label="Day 1">100৳</td>
+          <td data-label="Day 2">101৳</td>
+          <td data-label="Day 3">102৳</td>
+          <td data-label="Day 4">103৳</td>
+          <td data-label="Day 5">104৳</td>
+          <td data-label="Day 6">105৳</td>
+          <td data-label="Day 7">106৳</td>
+        </tr>
+        <tr>
+          <td data-label="Crop">Garlic</td>
+          <td data-label="Day 1">210৳</td>
+          <td data-label="Day 2">211৳</td>
+          <td data-label="Day 3">212৳</td>
+          <td data-label="Day 4">213৳</td>
+          <td data-label="Day 5">214৳</td>
+          <td data-label="Day 6">215৳</td>
+          <td data-label="Day 7">216৳</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="content-box">
+    <h2><i class="fas fa-chart-line"></i> Price Trends Visualization</h2>
+    <div class="chart-container">
+      <canvas id="dailyTrendChart"></canvas>
+    </div>
+    
+    <div class="chart-container" style="margin-top: 40px;">
+      <canvas id="priceComparisonChart"></canvas>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="footer-content">
+    <div class="footer-section">
+      <p>&copy; 2025 FarmVille | Market Intelligence for Smarter Farming Decisions</p>
+      <div class="social-icons">
+        <a href="https://facebook.com" target="_blank"><i class="fab fa-facebook-f"></i></a>
+        <a href="https://twitter.com" target="_blank"><i class="fab fa-twitter"></i></a>
+        <a href="https://instagram.com" target="_blank"><i class="fab fa-instagram"></i></a>
+      </div>
+    </div>
+    <div class="footer-section">
+      <h4><i class="fas fa-headset"></i> Support</h4>
+      <p>Email: <a href="mailto:support@farmville.com">support@farmville.com</a></p>
+      <p>Phone: +880 1234-567890</p>
+    </div>
+    <div class="footer-section">
+      <h4><i class="fas fa-link"></i> Quick Links</h4>
+      <a href="privacy-policy.html">Privacy Policy</a>
+      <a href="terms.html">Terms & Conditions</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Initialize cart count
+  function updateCartCount() {
+    const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
+    const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+    document.getElementById('cartCount').innerText = totalItems;
+  }
+  
+  updateCartCount();
+
+  // Sidebar functionality
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const body = document.body;
+  let sidebarTimeout;
+  
+  // Open sidebar when hovering over toggle button
+  sidebarToggle.addEventListener('mouseenter', () => {
+    clearTimeout(sidebarTimeout);
+    body.classList.add('sidebar-open');
+  });
+  
+  // Keep sidebar open when mouse enters the sidebar
+  sidebar.addEventListener('mouseenter', () => {
+    clearTimeout(sidebarTimeout);
+  });
+  
+  // Schedule closing sidebar when mouse leaves sidebar or toggle
+  sidebar.addEventListener('mouseleave', () => {
+    sidebarTimeout = setTimeout(() => {
+      body.classList.remove('sidebar-open');
+    }, 300);
+  });
+  
+  sidebarToggle.addEventListener('mouseleave', (e) => {
+    // Only close if we're not moving into the sidebar
+    if (e.relatedTarget !== sidebar) {
+      sidebarTimeout = setTimeout(() => {
+        body.classList.remove('sidebar-open');
+      }, 300);
+    }
+  });
+  
+  // Click toggle for mobile devices
+  sidebarToggle.addEventListener('click', () => {
+    body.classList.toggle('sidebar-open');
+  });
+
+  // Chart functionality
+// Daily Trend Chart (Bar Chart) - All Crops
+const dailyCtx = document.getElementById('dailyTrendChart').getContext('2d');
+const dailyTrendChart = new Chart(dailyCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+    datasets: [
+      {
+        label: 'Coarse Rice',
+        data: [50, 51, 52, 52, 53, 53, 54],
+        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      },
+      {
+        label: 'Fine Rice',
+        data: [65, 66, 66, 67, 67, 68, 68],
+        backgroundColor: 'rgba(75, 192, 192, 0.7)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1
+      },
+      {
+        label: 'Wheat Flour (Atta)',
+        data: [62, 63, 63, 64, 64, 64, 65],
+        backgroundColor: 'rgba(255, 206, 86, 0.7)',
+        borderColor: 'rgba(255, 206, 86, 1)',
+        borderWidth: 1
+      },
+      {
+        label: 'Lentils (Masoor Dal)',
+        data: [125, 126, 127, 128, 129, 130, 130],
+        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 1
+      },
+      {
+        label: 'Green Grams (Moong Dal)',
+        data: [115, 116, 117, 118, 119, 120, 121],
+        backgroundColor: 'rgba(153, 102, 255, 0.7)',
+        borderColor: 'rgba(153, 102, 255, 1)',
+        borderWidth: 1
+      },
+      {
+        label: 'Soybean Oil',
+        data: [175, 176, 177, 178, 179, 180, 180],
+        backgroundColor: 'rgba(255, 159, 64, 0.7)',
+        borderColor: 'rgba(255, 159, 64, 1)',
+        borderWidth: 1
+      },
+      {
+        label: 'Mustard Oil',
+        data: [225, 226, 227, 228, 229, 230, 230],
+        backgroundColor: 'rgba(199, 199, 199, 0.7)',
+        borderColor: 'rgba(199, 199, 199, 1)',
+        borderWidth: 1
+      },
+      {
+        label: 'Potatoes',
+        data: [70, 71, 72, 73, 74, 75, 75],
+        backgroundColor: 'rgba(83, 102, 255, 0.7)',
+        borderColor: 'rgba(83, 102, 255, 1)',
+        borderWidth: 1
+      },
+      {
+        label: 'Onions',
+        data: [100, 101, 102, 103, 104, 105, 106],
+        backgroundColor: 'rgba(40, 167, 69, 0.7)',
+        borderColor: 'rgba(40, 167, 69, 1)',
+        borderWidth: 1
+      },
+      {
+        label: 'Garlic',
+        data: [210, 211, 212, 213, 214, 215, 216],
+        backgroundColor: 'rgba(220, 53, 69, 0.7)',
+        borderColor: 'rgba(220, 53, 69, 1)',
+        borderWidth: 1
+      }
+    ]
+  },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Daily Price Trends (Selected Crops)',
+          font: {
+            size: 18
+          }
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          titleColor: 'white',
+          bodyColor: 'white',
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1,
+        },
+        legend: {
+          position: 'top',
+          labels: {
+            font: {
+              size: 12
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Days',
+            font: {
+              weight: 'bold'
+            }
+          },
+          grid: {
+            display: false
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Price (৳)',
+            font: {
+              weight: 'bold'
+            }
+          },
+          beginAtZero: false,
+          min: 40
+        }
+      },
+      animation: {
+        duration: 1000,
+        easing: 'easeOutQuart'
+      }
+    }
+  });
+
+  // Price Comparison Chart (Horizontal Bar Chart)
+  const compareCtx = document.getElementById('priceComparisonChart').getContext('2d');
+  const priceComparisonChart = new Chart(compareCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Coarse Rice', 'Fine Rice', 'Wheat Flour', 'Lentils', 'Green Grams', 'Soybean Oil', 'Mustard Oil', 'Potatoes', 'Onions', 'Garlic'],
+      datasets: [{
+        label: 'Current Price (৳)',
+        data: [54, 68, 65, 130, 121, 180, 230, 75, 106, 216],
+        backgroundColor: [
+          'rgba(54, 162, 235, 0.7)',
+          'rgba(75, 192, 192, 0.7)',
+          'rgba(255, 206, 86, 0.7)',
+          'rgba(255, 99, 132, 0.7)',
+          'rgba(153, 102, 255, 0.7)',
+          'rgba(255, 159, 64, 0.7)',
+          'rgba(199, 199, 199, 0.7)',
+          'rgba(83, 102, 255, 0.7)',
+          'rgba(40, 167, 69, 0.7)',
+          'rgba(220, 53, 69, 0.7)'
+        ],
+        borderColor: [
+          'rgba(54, 162, 235, 1)',
+          'rgba(75, 192, 192, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(255, 99, 132, 1)',
+          'rgba(153, 102, 255, 1)',
+          'rgba(255, 159, 64, 1)',
+          'rgba(199, 199, 199, 1)',
+          'rgba(83, 102, 255, 1)',
+          'rgba(40, 167, 69, 1)',
+          'rgba(220, 53, 69, 1)'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Current Price Comparison Across Crops',
+          font: {
+            size: 18
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          titleColor: 'white',
+          bodyColor: 'white',
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1,
+        },
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Price (৳)',
+            font: {
+              weight: 'bold'
+            }
+          },
+          beginAtZero: true
+        },
+        y: {
+          grid: {
+            display: false
+          }
+        }
+      },
+      animation: {
+        duration: 1000,
+        easing: 'easeOutQuart'
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
