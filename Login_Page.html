@@ -172,14 +172,16 @@
 
     <form id="login-form" action="login.php" method="post" class="login-form">
       <div class="form-group">
-        <label for="user-select">Select User</label>
+        <label for="user-select">Select User Type</label>
         <select id="user-select" name="user_select">
-          <option value="">-- Select a user --</option>
-          <option value="1">John Doe (Green Valley Farm)</option>
-          <option value="2">Jane Smith (Sunrise Acres)</option>
-          <option value="3">Robert Johnson (Harvest Hills)</option>
-          <option value="admin">Admin (System Administrator)</option>
-          <option value="4">Add new user</option>
+          <option value="">-- Select a user type --</option>
+          <option value="admin">Admin</option>
+          <option value="farmer">Farmer</option>
+          <option value="vendor">Vendor</option>
+          <option value="agricultural-officer">Agricultural Officer</option>
+          <option value="customer">Customer</option>
+          <option value="storage-manager">Storage Manager</option>
+          <option value="new">Add new user</option>
         </select>
       </div>
 
@@ -244,19 +246,25 @@
 
     // Update form inputs when user is selected
     document.getElementById('user-select').addEventListener('change', function() {
-      const userId = this.value;
-      if (userId === '1') {
-        document.getElementById('email').value = 'john.doe@example.com';
-        document.getElementById('phone').value = '(555) 123-4567';
-      } else if (userId === '2') {
-        document.getElementById('email').value = 'jane.smith@example.com';
-        document.getElementById('phone').value = '(555) 234-5678';
-      } else if (userId === '3') {
-        document.getElementById('email').value = 'robert.johnson@example.com';
-        document.getElementById('phone').value = '(555) 345-6789';
-      } else if (userId === 'admin') {
+      const userType = this.value;
+      if (userType === 'admin') {
         document.getElementById('email').value = 'admin@farmville.com';
-        document.getElementById('phone').value = '(555) 999-0000';
+        document.getElementById('phone').value = '(555) 100-0000';
+      } else if (userType === 'farmer') {
+        document.getElementById('email').value = 'farmer@example.com';
+        document.getElementById('phone').value = '(555) 200-0000';
+      } else if (userType === 'vendor') {
+        document.getElementById('email').value = 'vendor@example.com';
+        document.getElementById('phone').value = '(555) 300-0000';
+      } else if (userType === 'agricultural-officer') {
+        document.getElementById('email').value = 'officer@agriculture.gov';
+        document.getElementById('phone').value = '(555) 400-0000';
+      } else if (userType === 'customer') {
+        document.getElementById('email').value = 'customer@example.com';
+        document.getElementById('phone').value = '(555) 500-0000';
+      } else if (userType === 'storage-manager') {
+        document.getElementById('email').value = 'storage@farmville.com';
+        document.getElementById('phone').value = '(555) 600-0000';
       } else {
         document.getElementById('email').value = '';
         document.getElementById('phone').value = '';

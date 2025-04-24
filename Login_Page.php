@@ -1,21 +1,14 @@
 <?php
-// Start session
+// Start the session
 session_start();
 
-// Database connection configuration
-$db_host = "localhost";
-$db_user = "farmville_user";
-$db_pass = "your_secure_password"; // Change this to a secure password in production
-$db_name = "farmville_db";
+// Database connection parameters
+$host = "localhost";
+$dbname = "farmville_db";
+$username = "farmville_user";
+$password = "your_secure_password";
 
-// Define response array
-$response = array(
-    "success" => false,
-    "message" => "",
-    "redirect" => ""
-);
-
-// Function to validate and sanitize input
+// Function to sanitize user inputs
 function sanitize_input($data) {
     $data = trim($data);
     $data = stripslashes($data);
@@ -26,91 +19,105 @@ function sanitize_input($data) {
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
-    // Get user selection
-    $user_select = isset($_POST['user_select']) ? sanitize_input($_POST['user_select']) : '';
+    // Get the user type
+    $user_type = sanitize_input($_POST["user_select"]);
     
-    // Determine which login method was used
-    $login_identifier = '';
-    $login_type = '';
-    
-    if (!empty($_POST['email'])) {
-        $login_identifier = sanitize_input($_POST['email']);
-        $login_type = 'email';
-    } elseif (!empty($_POST['phone'])) {
-        $login_identifier = sanitize_input($_POST['phone']);
-        $login_type = 'phone';
+    // Get login credentials based on which tab was active
+    if (!empty($_POST["email"])) {
+        $identifier = sanitize_input($_POST["email"]);
+        $identifier_type = "email";
+    } else if (!empty($_POST["phone"])) {
+        $identifier = sanitize_input($_POST["phone"]);
+        $identifier_type = "phone";
     } else {
-        $response["message"] = "Please provide an email or phone number";
-        echo json_encode($response);
+        // Both email and phone are empty
+        $_SESSION["login_error"] = "Please provide either email or phone number.";
+        header("Location: index.html");
         exit();
     }
     
     // Get password
-    $password = isset($_POST['password']) ? $_POST['password'] : '';
+    $password = sanitize_input($_POST["password"]);
     
-    if (empty($password)) {
-        $response["message"] = "Password is required";
-        echo json_encode($response);
+    // Validate inputs
+    if (empty($user_type) || empty($password)) {
+        $_SESSION["login_error"] = "All fields are required.";
+        header("Location: index.html");
         exit();
     }
     
-    // Connect to database
     try {
-        $conn = new PDO("mysql:host=$db_host;dbname=$db_name", $db_user, $db_pass);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        // Create database connection
+        $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
         
-        // Prepare SQL query based on login type
-        if ($login_type == 'email') {
-            $stmt = $conn->prepare("SELECT * FROM users WHERE email = :identifier");
-        } else {
-            $stmt = $conn->prepare("SELECT * FROM users WHERE phone = :identifier");
-        }
+        // Set the PDO error mode to exception
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         
-        $stmt->bindParam(':identifier', $login_identifier);
+        // Prepare SQL statement based on identifier type
+        $sql = "SELECT * FROM users WHERE $identifier_type = :identifier AND user_type = :user_type";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(":identifier", $identifier);
+        $stmt->bindParam(":user_type", $user_type);
         $stmt->execute();
         
-        // Check if user exists
-        if ($stmt->rowCount() > 0) {
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+        // Get the user record
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($user) {
             // Verify password
-            if (password_verify($password, $user['password_hash'])) {
-                // Password is correct, set session variables
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_name'] = $user['name'];
-                $_SESSION['farm_name'] = $user['farm_name'];
-                $_SESSION['user_role'] = $user['role'];
+            if (password_verify($password, $user["password_hash"])) {
+                // Authentication successful
+                // Set session variables
+                $_SESSION["user_id"] = $user["user_id"];
+                $_SESSION["user_type"] = $user["user_type"];
+                $_SESSION["user_name"] = $user["first_name"] . " " . $user["last_name"];
                 
-                // Determine where to redirect based on user role
-                if ($user['role'] == 'admin') {
-                    $response["redirect"] = "admin_dashboard.php";
-                } else {
-                    $response["redirect"] = "dashboard.php";
+                // Redirect based on user type
+                switch ($user_type) {
+                    case "admin":
+                        header("Location: admin/dashboard.php");
+                        break;
+                    case "farmer":
+                        header("Location: farmer/dashboard.php");
+                        break;
+                    case "vendor":
+                        header("Location: vendor/dashboard.php");
+                        break;
+                    case "agricultural-officer":
+                        header("Location: officer/dashboard.php");
+                        break;
+                    case "customer":
+                        header("Location: customer/dashboard.php");
+                        break;
+                    case "storage-manager":
+                        header("Location: storage/dashboard.php");
+                        break;
+                    default:
+                        header("Location: dashboard.php");
                 }
-                
-                $response["success"] = true;
-                $response["message"] = "Login successful";
+                exit();
             } else {
-                $response["message"] = "Invalid password";
+                // Invalid password
+                $_SESSION["login_error"] = "Invalid password.";
+                header("Location: index.html");
+                exit();
             }
         } else {
-            $response["message"] = "User not found";
+            // User not found
+            $_SESSION["login_error"] = "User not found.";
+            header("Location: index.html");
+            exit();
         }
-    } catch(PDOException $e) {
-        $response["message"] = "Database error: " . $e->getMessage();
+    } catch (PDOException $e) {
+        $_SESSION["login_error"] = "Connection failed: " . $e->getMessage();
+        header("Location: index.html");
+        exit();
     }
     
     // Close connection
-    $conn = null;
-    
-    // Return JSON response
-    echo json_encode($response);
-    exit();
-}
-
-// If the code reaches here, it means the request was not a POST
-// Redirect to login page if accessed directly
-if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest') {
+    $pdo = null;
+} else {
+    // If someone tries to access this page directly
     header("Location: index.html");
     exit();
 }
