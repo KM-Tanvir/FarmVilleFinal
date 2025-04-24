@@ -1,5 +1,5 @@
 <?php
-// Start session to maintain user state
+include "db.php";
 session_start();
 
 // Check if user is logged in

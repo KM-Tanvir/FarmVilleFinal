@@ -1,4 +1,5 @@
 <?php
+include "db.php";
 /**
  * Inventory Management System - Backend API
  * 

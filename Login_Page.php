@@ -1,5 +1,5 @@
 <?php
-// Start the session
+include "db.php";
 session_start();
 
 // Database connection parameters
@@ -19,9 +19,6 @@ function sanitize_input($data) {
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
-    // Get the user type
-    $user_type = sanitize_input($_POST["user_select"]);
-    
     // Get login credentials based on which tab was active
     if (!empty($_POST["email"])) {
         $identifier = sanitize_input($_POST["email"]);
@@ -40,8 +37,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = sanitize_input($_POST["password"]);
     
     // Validate inputs
-    if (empty($user_type) || empty($password)) {
-        $_SESSION["login_error"] = "All fields are required.";
+    if (empty($password)) {
+        $_SESSION["login_error"] = "Password is required.";
         header("Location: index.html");
         exit();
     }
@@ -54,10 +51,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         
         // Prepare SQL statement based on identifier type
-        $sql = "SELECT * FROM users WHERE $identifier_type = :identifier AND user_type = :user_type";
+        // Note: We don't filter by user_type here, we'll determine that from the database
+        $sql = "SELECT * FROM users WHERE $identifier_type = :identifier";
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(":identifier", $identifier);
-        $stmt->bindParam(":user_type", $user_type);
         $stmt->execute();
         
         // Get the user record
@@ -72,8 +69,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $_SESSION["user_type"] = $user["user_type"];
                 $_SESSION["user_name"] = $user["first_name"] . " " . $user["last_name"];
                 
+                // Log the successful login
+                $log_sql = "INSERT INTO login_logs (user_id, login_time, ip_address) VALUES (:user_id, NOW(), :ip)";
+                $log_stmt = $pdo->prepare($log_sql);
+                $log_stmt->bindParam(":user_id", $user["user_id"]);
+                $log_stmt->bindParam(":ip", $_SERVER['REMOTE_ADDR']);
+                $log_stmt->execute();
+                
                 // Redirect based on user type
-                switch ($user_type) {
+                switch ($user["user_type"]) {
                     case "admin":
                         header("Location: admin/dashboard.php");
                         break;

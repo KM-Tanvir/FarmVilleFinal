@@ -1,5 +1,5 @@
 <?php
-// Start the session
+include "db.php";
 session_start();
 
 // Database connection parameters

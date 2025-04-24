@@ -1,4 +1,5 @@
 <?php
+include "db.php";
 // Database connection configuration
 $servername = "localhost";
 $username = "root";

@@ -1,4 +1,5 @@
 <?php
+include "db.php";
 // Database configuration
 define('DB_SERVER', 'localhost');
 define('DB_USERNAME', 'farm_admin');

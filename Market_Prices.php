@@ -1,5 +1,5 @@
 <?php
-// Database connection parameters
+include "db.php";
 $host = "localhost";
 $dbname = "farm_management";
 $username = "root";

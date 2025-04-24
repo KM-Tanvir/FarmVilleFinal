@@ -1,4 +1,5 @@
 <?php
+include "db.php";
 // historical_production.php - Backend for Historical Production Dashboard
 // Database connection parameters
 $host = "localhost";
