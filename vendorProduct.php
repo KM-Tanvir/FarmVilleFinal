@@ -16,12 +16,13 @@
 </head>
 <body>
 <div class="sidebar">
-    <h2>Vendor Home Page</h2>
-    <a href="vendorHome.php">Home</a>
-    <a href="vendorProduct.php">Product Info</a>
-    <a href="vendorGraph.php">Graph/Chart</a>
-    <a href="vendorProfile.php">Profile</a>
-    <a href="signout.php">Sign Out</a>
+    <h2>Product Information</h2>
+    <a href="vendorHome.php">Home 🏠</a>
+    <a href="vendorProduct.php">Product Info 📦</a>
+    <a href="vendorGraph.php">Graph/Chart 📊</a>
+    <a href="buyerAndSellerDirectory.php">Buyer & Seller Directory 📖</a>
+    <a href="vendorProfile.php">Profile 👤</a>
+    <a href="login.php">Sign Out 🚪</a>
 </div>
 
 <div class="content">

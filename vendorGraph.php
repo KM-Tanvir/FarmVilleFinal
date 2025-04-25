@@ -17,19 +17,20 @@
 </head>
 <body>
 <div class="sidebar">
-    <h2>Vendor Home Page</h2>
-    <a href="vendorHome.php">Home</a>
-    <a href="vendorProduct.php">Product Info</a>
-    <a href="vendorGraph.php">Graph/Chart</a>
-    <a href="vendorProfile.php">Profile</a>
-    <a href="signout.php">Sign Out</a>
+    <h2>Graph according to Price and Seasonality</h2>
+    <a href="vendorHome.php">Home 🏠</a>
+    <a href="vendorProduct.php">Product Info 📦</a>
+    <a href="vendorGraph.php">Graph/Chart 📊</a>
+    <a href="buyerAndSellerDirectory.php">Buyer & Seller Directory 📖</a>
+    <a href="vendorProfile.php">Profile 👤</a>
+    <a href="login.php">Sign Out 🚪</a>
 </div>
 
 <div class="content">
     <h2>Product Data Charts</h2>
 
-    <canvas id="priceChart" width="300" height="150"></canvas>
-    <canvas id="seasonChart" width="300" height="150" class="mt-5"></canvas>
+    <canvas id="priceChart" width="1000" height="500"></canvas>
+    <canvas id="seasonChart" width="1000" height="500" class="mt-5"></canvas>
 
     <?php
     // Get price data
@@ -72,7 +73,7 @@
             }]
         },
         options: {
-            responsive: true,
+            responsive: false, // disables auto-resizing
             plugins: {
                 title: { display: true, text: 'Product Price Comparison' }
             },
@@ -97,7 +98,7 @@
             }]
         },
         options: {
-            responsive: true,
+            responsive: false, // disables auto-resizing
             plugins: {
                 title: { display: true, text: 'Product Seasonality' }
             }
