@@ -8,7 +8,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Vendor Dashboard</title>
+    <title>Product</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { display: flex; min-height: 100vh; }
@@ -28,7 +28,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
         .sidebar a.active { 
             background: rgb(63, 162, 233);
             font-weight: bold; 
-            
         }
         .content { flex: 1; padding: 20px; }
         .toggle-btn {
@@ -39,20 +38,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
             cursor: pointer;
             margin-bottom: 20px;
         }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        ul li {
-            margin: 10px 0;
-        }
-        ul li a {
-            display: flex;
-            align-items: center;
-        }
-        .icon {
-            margin-right: 10px;
-            font-size: 20px;
+        ul { list-style: none; padding: 0; }
+        ul li { margin: 10px 0; }
+        ul li a { display: flex; align-items: center; }
+        .icon { margin-right: 10px; font-size: 20px; }
+        .input-group .form-control::placeholder {
+            color: #aaa;
         }
     </style>
     <script>
@@ -87,42 +78,36 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <span class="text">Historical Production Data</span>
             </a>
         </li>
-
         <li>
             <a href="DemandData.php" class="<?php echo ($current_page =='DemandData.php') ? 'active' : ''; ?>">
                 <span class="icon"></span>
                 <span class="text">Demand Data</span>
             </a>
         </li>
-
         <li>
             <a href="SupplyLevel.php" class="<?php echo ($current_page =='SupplyLevel.php') ? 'active' : ''; ?>">
                 <span class="icon"></span>
                 <span class="text">Supply Level</span>
             </a>
         </li>
-
         <li>
             <a href="marketPrice.php" class="<?php echo ($current_page =='marketPrice.php') ? 'active' : ''; ?>">
                 <span class="icon"></span>
                 <span class="text">Historical and Current prices</span>
             </a>
         </li>
-
         <li>
             <a href="vendorGraph.php" class="<?php echo ($current_page == 'vendorGraph.php') ? 'active' : ''; ?>">
                 <span class="icon"></span>
                 <span class="text">Graph/Chart</span>
             </a>
         </li>
-
         <li>
             <a href="Recommendations.php" class="<?php echo ($current_page == 'Recommendations.php') ? 'active' : ''; ?>">
                 <span class="icon"></span>
                 <span class="text">Recommendations</span>
             </a>
         </li>
-
         <li>
             <a href="buyerAndSellerDirectory.php" class="<?php echo ($current_page == 'buyerAndSellerDirectory.php') ? 'active' : ''; ?>">
                 <span class="icon"></span>
@@ -144,9 +129,49 @@ $current_page = basename($_SERVER['PHP_SELF']);
     </ul>
 </div>
 
-<div class="content">
-    <h1>Welcome, Vendor!</h1>
-    <p>Select an option from the left menu to manage agricultural data.</p>
+<div class="container">
+    <h2>Product List</h2>
+    <?php if (isset($message)) echo "<div class='alert alert-info'>$message</div>"; ?>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Product ID</th>
+                <th>Product Name</th>
+                <th>Yield</th>
+                <th>Acreage</th>
+                <th>Cost</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            // Fetch products from database
+            $query = "SELECT * FROM Product_T";
+            $result = $conn->query($query);
+            
+            if ($result && $result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    echo "<tr>
+                            <td>{$row['ProductID']}</td>
+                            <td>{$row['ProductName']}</td>
+                            <td>{$row['Yield']}</td>
+                            <td>{$row['Acreage']}</td>
+                            <td>{$row['Cost']}</td>
+                            <td>
+                                <a href='HistoricalDataEdit.php?product_id={$row['ProductID']}' class='btn btn-warning btn-sm'>Edit</a>
+                                <a href='HistoricalData.php?delete_product_id={$row['ProductID']}' class='btn btn-danger btn-sm' onclick='return confirm(\"Are you sure you want to delete this product?\")'>Delete</a>
+                            </td>
+                        </tr>";
+                }
+            } else {
+                echo "<tr><td colspan='6' class='text-center'>No products found.</td></tr>";
+            }
+            ?>
+        </tbody>
+    </table>
+    <br>
+    <a href="HistoricalDataAdd.php" class="btn btn-success mb-3">Add New Product</a>
 </div>
 
 </body>

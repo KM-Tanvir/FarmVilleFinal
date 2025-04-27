@@ -24,7 +24,7 @@
     <a href="login.php">Sign Out 🚪</a>
 </div>
 <div class="container mt-4">
-    <h2>Admin Profile</h2>
+    <h2>Vendor Profile</h2>
     <?php
     $vendor_id = 1; // Hardcoded for now – make dynamic if needed
     $query = "SELECT name, email, phone, address FROM vendors WHERE id = $vendor_id";

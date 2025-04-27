@@ -144,10 +144,73 @@ $current_page = basename($_SERVER['PHP_SELF']);
     </ul>
 </div>
 
-<div class="content">
-    <h1>Welcome, Vendor!</h1>
-    <p>Select an option from the left menu to manage agricultural data.</p>
-</div>
+    <div class="content">
+        <h2>Add New Product (Full Details)</h2>
 
+        <?php
+        if (isset($_POST['save'])) {
+            $productName = $conn->real_escape_string($_POST['product_name']);
+            $productType = $conn->real_escape_string($_POST['product_type']);
+            $variety = $conn->real_escape_string($_POST['variety']);
+            $seasonality = $conn->real_escape_string($_POST['seasonality']);
+            $currentPrice = floatval($_POST['current_price']);
+            $yield = floatval($_POST['yield']);
+            $acreage = floatval($_POST['acreage']);
+            $cost = floatval($_POST['cost']);
+            
+            if (empty($productName) || empty($productType) || empty($variety) || empty($seasonality) || empty($currentPrice) || empty($yield) || empty($acreage) || empty($cost)) {
+                echo "<p class='text-danger'>All fields are required!</p>";
+            } else {
+                $insertSQL = "INSERT INTO Product_T (ProductName, ProductType, Variety, Seasonality, CurrentPrice, Yield, Acreage, Cost)
+                            VALUES ('$productName', '$productType', '$variety', '$seasonality', $currentPrice, $yield, $acreage, $cost)";
+                
+                if ($conn->query($insertSQL) === TRUE) {
+                    echo "<p class='text-success mt-3'>Product added successfully!</p>";
+                } else {
+                    echo "<p class='text-danger mt-3'>Error: " . $conn->error . "</p>";
+                }
+            }
+        }
+        ?>
+
+        <form method="post" action="">
+            <div class="mb-3">
+                <label class="form-label">Product Name</label>
+                <input type="text" name="product_name" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Product Type</label>
+                <input type="text" name="product_type" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Variety</label>
+                <input type="text" name="variety" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Seasonality</label>
+                <input type="text" name="seasonality" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Current Price (Tk.)</label>
+                <input type="number" step="0.01" name="current_price" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Yield</label>
+                <input type="number" step="0.01" name="yield" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Acreage</label>
+                <input type="number" step="0.01" name="acreage" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Cost (Tk.)</label>
+                <input type="number" step="0.01" name="cost" class="form-control" required>
+            </div>
+
+            <button type="submit" name="save" class="btn btn-success">Add Product</button>
+            <a href="HistoricalData.php" class="btn btn-secondary ms-2">Back</a>
+        </form>
+    </div>
+</div>
 </body>
 </html>
