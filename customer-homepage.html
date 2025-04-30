@@ -313,68 +313,6 @@ body.sidebar-open .sidebar-toggle {
   border-radius: 3px;
 }
 
-/* ===== FLOATING STATS CARD ===== */
-.floating-stats {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  background: white;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  padding: 20px;
-  z-index: 99;
-  width: 280px;
-  transform: translateY(20px);
-  opacity: 0;
-  animation: floatUp 0.5s ease-out 0.5s forwards;
-  border-left: 5px solid var(--primary);
-}
-
-@keyframes floatUp {
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.floating-stats h3 {
-  color: var(--dark);
-  margin-bottom: 15px;
-  font-size: 1.2rem;
-  text-align: center;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-}
-
-.stat-item {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  padding: 10px;
-  border-radius: 8px;
-  background: rgba(44, 141, 173, 0.05);
-  transition: all 0.3s ease;
-}
-
-.stat-item:hover {
-  background: rgba(44, 141, 173, 0.1);
-  transform: translateX(5px);
-}
-
-.stat-label {
-  font-weight: 500;
-  color: var(--dark);
-}
-
-.stat-value {
-  font-weight: 600;
-  color: var(--primary);
-}
-
-.stat-icon {
-  margin-right: 10px;
-  color: var(--secondary);
-}
 
 
 /* ===== PRODUCT STYLES ===== */
@@ -677,44 +615,6 @@ body.sidebar-open .sidebar-toggle {
   font-weight: 600;
 }
 
-/* ===== VENDOR STYLES ===== */
-.vendor-card {
-  padding: 20px;
-  border-radius: 12px;
-  background-color: white;
-  margin-bottom: 20px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  border-left: 4px solid var(--secondary);
-  transition: all 0.3s ease;
-}
-
-.vendor-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-.vendor-card h3 {
-  color: var(--dark);
-  margin-bottom: 10px;
-  font-size: 1.2rem;
-}
-
-.rating {
-  color: #ffc107;
-  margin-bottom: 10px;
-}
-
-.certified {
-  display: inline-block;
-  background: linear-gradient(to right, var(--secondary), var(--primary));
-  color: white;
-  padding: 5px 15px;
-  border-radius: 20px;
-  font-weight: 600;
-  margin-top: 15px;
-  font-size: 0.9rem;
-  box-shadow: 0 3px 10px rgba(31, 64, 142, 0.2);
-}
 
 /* ===== TABLE STYLES ===== */
 .seasonality-table {
@@ -790,39 +690,6 @@ body.sidebar-open .sidebar-toggle {
   left: 0;
   color: var(--primary);
   font-weight: bold;
-}
-
-.progress-container {
-  width: 100%;
-  background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 10px;
-  margin: 15px 0;
-  height: 12px;
-  overflow: hidden;
-}
-
-.progress-bar {
-  height: 100%;
-  border-radius: 10px;
-  background: linear-gradient(to right, var(--primary), var(--secondary));
-  position: relative;
-  overflow: hidden;
-}
-
-.progress-bar::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  animation: progressShine 2s infinite;
-}
-
-@keyframes progressShine {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
 }
 
 /* ===== BUTTON STYLES ===== */
@@ -1170,25 +1037,6 @@ section, button, a.btn, form {
     </div>
   </section>
 
-  <section id="top-vendors" class="content-box">
-    <h2><i class="fas fa-store"></i> Top Vendors</h2>
-    <div class="vendor-card">
-      <h3>AgroPro Farmers</h3>
-      <div class="rating">⭐⭐⭐⭐☆</div>
-      <p>Specializing in organic vegetables and seasonal fruits with sustainable farming practices.</p>
-    </div>
-
-    <div class="vendor-card">
-      <h3>Grow Land</h3>
-      <p>Clean interface, real-time updates, and better reach — FarmVille helps us sell smarter every day!</p>
-      <div class="rating">⭐⭐⭐⭐⭐</div>
-    </div>
-
-    <div>
-      <a href="vendor-products.html" class="btn">View Vendors & Their Qualityful Products <i class="fas fa-arrow-right"></i></a>
-      <span class="certified"><i class="fas fa-check-circle"></i> Certified FarmVille Vendor</span>
-    </div>
-  </section> 
 
   <section id="crop-seasonality" class="content-box">
     <h2><i class="fas fa-calendar-alt"></i> Crop Seasonality Guide</h2>
@@ -1265,37 +1113,7 @@ section, button, a.btn, form {
         <li>📦 Place early orders for <strong>Soybean</strong> — supply is tight this month.</li>
       </ul>
     </div>
-    
-    <div class="recommendation-card">
-      <h3>Market opportunity</h3>
-      <p>Wheat prices are expected to rise next month. Consider stocking up now at current rate of ৳32/kg.</p>
-      <div class="progress-container">
-        <div class="progress-bar" style="width: 80%"></div>
-      </div>
-      <p>Price confidence: 80%</p>
-    </div>
   </section>
-</div>
-
-<!-- Floating Stats Card -->
-<div class="floating-stats">
-  <h3>Your FarmVille Stats</h3>
-  <div class="stat-item">
-    <span class="stat-label"><i class="fas fa-shopping-cart stat-icon"></i> Total Orders</span>
-    <span class="stat-value">12</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-label"><i class="fas fa-clock stat-icon"></i> Last Order</span>
-    <span class="stat-value">Apr 15, 2025</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-label"><i class="fas fa-heart stat-icon"></i> Favorite Products</span>
-    <span class="stat-value">5</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-label"><i class="fas fa-star stat-icon"></i> Most Ordered</span>
-    <span class="stat-value">Potatoes</span>
-  </div>
 </div>
 
 <footer>

@@ -818,7 +818,6 @@
 <div class="sidebar" id="sidebar">
   <a href="customer-homepage.html"><i class="fas fa-home"></i> Home</a>
   <a href="customer-product-catalog.html"><i class="fas fa-shopping-basket"></i> Browse Products</a>
-  <a href="customer-market-insights.html"><i class="fas fa-chart-line"></i> Market Insights</a>
   <a href="customer-order-history.html" class="active"><i class="fas fa-history"></i> My Orders</a>
   <a href="customer-feedback.html"><i class="fas fa-comment-alt"></i> Feedbacks</a>
   <a href="Login_Page.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -871,7 +870,6 @@
             <div class="product-details">
               <h3>Onion</h3>
               <p><strong>Quantity:</strong> 3 kg</p>
-              <p><strong>Vendor:</strong> GoldenRoot Suppliers</p>
               <p><strong>Price:</strong> 50 ৳/kg</p>
             </div>
           </div>
@@ -881,7 +879,6 @@
             <div class="product-details">
               <h3>Potato</h3>
               <p><strong>Quantity:</strong> 5 kg</p>
-              <p><strong>Vendor:</strong> FreshHarvest Ltd.</p>
               <p><strong>Price:</strong> 30 ৳/kg</p>
             </div>
           </div>
@@ -915,7 +912,6 @@
             <div class="product-details">
               <h3>Garlic</h3>
               <p><strong>Quantity:</strong> 50 kg</p>
-              <p><strong>Vendor:</strong> Garlic World Traders</p>
               <p><strong>Price:</strong> 120 ৳/kg</p>
             </div>
           </div>
@@ -925,7 +921,6 @@
             <div class="product-details">
               <h3>Onion</h3>
               <p><strong>Quantity:</strong> 40 kg</p>
-              <p><strong>Vendor:</strong> GoldenRoot Suppliers</p>
               <p><strong>Price:</strong> 50 ৳/kg</p>
             </div>
           </div>
@@ -959,7 +954,6 @@
             <div class="product-details">
               <h3>Fine Rice</h3>
               <p><strong>Quantity:</strong> 1000 kg</p>
-              <p><strong>Vendor:</strong> AgroStar Ltd.</p>
               <p><strong>Price:</strong> 67 ৳/kg</p>
             </div>
           </div>
@@ -1105,7 +1099,6 @@
       <tr>
         <th>Product</th>
         <th>Price</th>
-        <th>Vendor</th>
         <th>Quantity</th>
         <th>Subtotal</th>
         <th>Action</th>
@@ -1129,7 +1122,6 @@
       row.innerHTML = `
         <td data-label="Product">${item.crop}</td>
         <td data-label="Price">${item.price}</td>
-        <td data-label="Vendor">${item.vendor}</td>
         <td data-label="Quantity">
           <div class="quantity-controls">
             <button class="quantity-btn" onclick="decreaseQuantity(${index})">-</button>
@@ -1211,7 +1203,7 @@
     }
     
     // Redirect to checkout page
-    window.location.href = 'checkout.html';
+    window.location.href = 'customer-checkout.html';
   }
 </script>
 
