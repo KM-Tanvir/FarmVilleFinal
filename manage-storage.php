@@ -715,7 +715,7 @@ $conn->close();
         <div class="form-grid">
           <div class="form-group">
             <label for="edit_storage_id">Storage ID</label>
-            <input type="text" id="edit_storage_id" name="storage_id" readonly>
+            <input type="text" id="edit_storage_id" name="storage_id">
           </div>
           <div class="form-group">
             <label for="edit_product_id">Product ID</label>
