@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recommendations</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+    }
+
+    .sidebar {
+      width: 240px;
+      background-color: #f8f9fa;
+      height: 100vh;
+      transition: width 0.3s;
+      overflow: hidden;
+      position: fixed;
+      border-right: 1px solid #e0e0e0;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar.collapsed {
+      width: 60px;
+    }
+
+    .toggle-btn {
+      background-color: #4088f5;
+      color: white;
+      border: none;
+      width: 100%;
+      padding: 15px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .toggle-btn span {
+      font-size: 20px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+      margin-top: 10px;
+    }
+
+    li {
+      padding: 5px;
+      display: flex;
+      align-items: center;
+    }
+
+    li:hover {
+      background-color: #dee2e6;
+    }
+
+    li .icon {
+      margin-right: 10px;
+      font-size: 18px;
+    }
+
+    .collapsed .text {
+      display: none;
+    }
+
+    .main-content {
+      margin-left: 240px;
+      padding: 20px;
+      transition: margin-left 0.3s;
+      width: 100%;
+    }
+
+    .collapsed ~ .main-content {
+      margin-left: 60px;
+    }
+
+    a {
+      text-decoration: none;
+      color: black;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      margin: 5px;
+      padding: 7px;
+      border-radius: 7px;
+    }
+
+    .sidebar a.active {
+      background-color: #3482f8;
+      color: white;
+      font-weight: bold;
+    }
+
+    .admin-container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 1000px;
+      margin: 20px auto;
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .admin-header h1 {
+      color: #333;
+      font-size: 24px;
+    }
+
+    .admin-content {
+      margin-top: 20px;
+    }
+
+    .section-title {
+      margin: 20px 0 10px;
+      color: #4088f5;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+
+    .btn {
+      padding: 10px 15px;
+      background-color: #4088f5;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #3373d9;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+    }
+
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    table th, table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    table th {
+      background-color: #f8f9fa;
+      color: #333;
+      font-weight: bold;
+    }
+
+    table tr:hover {
+      background-color: #f5f5f5;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 5px;
+    }
+
+    .action-btn {
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .edit-btn {
+      background-color: #28a745;
+      color: white;
+      border: none;
+    }
+
+    .delete-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .form-group textarea {
+      height: 150px;
+      resize: vertical;
+    }
+
+    .recommendation-box {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-left: 4px solid #4088f5;
+    }
+
+    .recommendation-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .recommendation-title {
+      font-weight: bold;
+      font-size: 18px;
+      color: #333;
+    }
+
+    .recommendation-date {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .recommendation-category {
+      display: inline-block;
+      background-color: #e9ecef;
+      padding: 3px 8px;
+      border-radius: 15px;
+      font-size: 12px;
+      color: #495057;
+      margin: 5px 0;
+    }
+
+    .recommendation-content {
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    .filter-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .search-box {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 250px;
+    }
+
+    .category-filter {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 180px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 10% auto;
+      padding: 25px;
+      border-radius: 8px;
+      width: 60%;
+      max-width: 600px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    .close-btn {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close-btn:hover {
+      color: black;
+    }
+
+    .modal-header {
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .main-content {
+        margin-left: 60px;
+      }
+      
+      .sidebar {
+        width: 60px;
+      }
+      
+      .text {
+        display: none;
+      }
+
+      .modal-content {
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <button class="toggle-btn" onclick="toggleSidebar()">
+      <span>☰</span>
+    </button>
+    <ul>
+      <li>
+        <a href="Admin_Dashboard.html">
+          <span class="icon">📊</span>
+          <span class="text">Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a href="Farmer_Management.html">
+          <span class="icon">👨‍🌾</span>
+          <span class="text">Farmer Management</span>
+        </a>
+      </li>
+      <li>
+        <a href="Admin_Product_Information.html">
+          <span class="icon">🌽</span>
+          <span class="text">Product Information</span>
+        </a>
+      </li>
+      <li>
+        <a href="Admin_Historical_Production.html">
+          <span class="icon">📈</span>
+          <span class="text">Historical Production</span>
+        </a>
+      </li>
+      <li>
+        <a href="Inventory_Management.html">
+          <span class="icon">📦</span>
+          <span class="text">Supply Levels</span>
+        </a>
+      </li>
+      <li>
+        <a href="Market_Prices.html">
+          <span class="icon">💰</span>
+          <span class="text">Market Prices</span>
+        </a>
+      </li>
+      <li>
+        <a href="Buyer_Seller_Directory.html">
+          <span class="icon">👥</span>
+          <span class="text">Buyer/Seller Directory</span>
+        </a>
+      </li>
+      <li>
+        <a href="Reports.html">
+          <span class="icon">📁</span>
+          <span class="text">Reports</span>
+        </a>
+      </li>
+      <li>
+        <a href="Recommendations.html" class="active">
+          <span class="icon">💡</span>
+          <span class="text">Recommendations</span>
+        </a>
+      </li>
+      <li>
+        <a href="Settings.html">
+          <span class="icon">⚙️</span>
+          <span class="text">Settings</span>
+        </a>
+      </li>
+      <li>
+        <a href="Login_Page.html">
+          <span class="icon">⏻</span>
+          <span class="text">Sign Out</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <div class="admin-container">
+      <div class="admin-header">
+        <h1>Farmer Recommendations</h1>
+        <div>
+          <span id="current-date"></span>
+        </div>
+      </div>
+
+      <div class="admin-content">
+        <div class="filter-toolbar">
+          <div>
+            <button class="btn" id="add-recommendation-btn">Add New Recommendation</button>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" class="search-box" placeholder="Search recommendations...">
+            <select class="category-filter">
+              <option value="">All Categories</option>
+              <option value="crop">Crop Management</option>
+              <option value="pest">Pest Control</option>
+              <option value="market">Market Trends</option>
+              <option value="equipment">Equipment</option>
+              <option value="weather">Weather Advisory</option>
+            </select>
+          </div>
+        </div>
+
+        <h3 class="section-title">Current Recommendations</h3>
+        
+        <!-- Example recommendations -->
+        <div class="recommendation-box">
+          <div class="recommendation-header">
+            <div class="recommendation-title">Optimal Planting Time for Winter Wheat</div>
+            <div class="recommendation-date">May 1, 2025</div>
+          </div>
+          <div class="recommendation-category">Crop Management</div>
+          <div class="recommendation-content">
+            Based on current soil conditions and weather forecasts, we recommend planting winter wheat between October 5-15. This timing will allow for optimal root development before winter dormancy and maximize yields. Soil temperature should be below 65°F for best germination results.
+          </div>
+          <div style="margin-top: 10px; text-align: right">
+            <button class="action-btn edit-btn">Edit</button>
+            <button class="action-btn delete-btn">Delete</button>
+          </div>
+        </div>
+
+        <div class="recommendation-box">
+          <div class="recommendation-header">
+            <div class="recommendation-title">Market Price Alert: Corn Futures Rising</div>
+            <div class="recommendation-date">April 28, 2025</div>
+          </div>
+          <div class="recommendation-category">Market Trends</div>
+          <div class="recommendation-content">
+            Recent market analysis indicates corn futures are expected to rise by 8-12% in the next 3 months due to lower projected yields in major production regions. Farmers may want to consider holding inventory if storage conditions permit or securing forward contracts at current favorable rates.
+          </div>
+          <div style="margin-top: 10px; text-align: right">
+            <button class="action-btn edit-btn">Edit</button>
+            <button class="action-btn delete-btn">Delete</button>
+          </div>
+        </div>
+
+        <div class="recommendation-box">
+          <div class="recommendation-header">
+            <div class="recommendation-title">Early Warning: Soybean Aphid Population Increase</div>
+            <div class="recommendation-date">April 25, 2025</div>
+          </div>
+          <div class="recommendation-category">Pest Control</div>
+          <div class="recommendation-content">
+            Monitoring stations have detected a 30% increase in soybean aphid populations compared to last year. We recommend implementing preventative measures including regular field scouting starting in early June. Consider biological controls such as lady beetles or approved insecticides if populations exceed 250 aphids per plant.
+          </div>
+          <div style="margin-top: 10px; text-align: right">
+            <button class="action-btn edit-btn">Edit</button>
+            <button class="action-btn delete-btn">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Recommendation Modal -->
+  <div id="recommendation-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="close-btn">&times;</span>
+        <h2>Add New Recommendation</h2>
+      </div>
+      <form action="recommendations.php" method="POST">
+        <div class="form-group">
+          <label for="title">Recommendation Title</label>
+          <input type="text" id="title" name="title" required>
+        </div>
+        <div class="form-group">
+          <label for="category">Category</label>
+          <select id="category" name="category" required>
+            <option value="">Select a Category</option>
+            <option value="crop">Crop Management</option>
+            <option value="pest">Pest Control</option>
+            <option value="market">Market Trends</option>
+            <option value="equipment">Equipment</option>
+            <option value="weather">Weather Advisory</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="target-farmers">Target Farmers (Optional)</label>
+          <select id="target-farmers" name="target_farmers[]" multiple>
+            <option value="all">All Farmers</option>
+            <option value="organic">Organic Farms</option>
+            <option value="crops">Crop Farms</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="content">Recommendation Content</label>
+          <textarea id="content" name="content" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="expiry">Expiry Date (Optional)</label>
+          <input type="date" id="expiry" name="expiry">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn">Save Recommendation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("collapsed");
+    }
+    
+    // Set current date
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', options);
+
+    // Modal functionality
+    const modal = document.getElementById("recommendation-modal");
+    const addBtn = document.getElementById("add-recommendation-btn");
+    const closeBtn = document.querySelector(".close-btn");
+    const cancelBtn = document.getElementById("cancel-btn");
+
+    addBtn.onclick = function() {
+      modal.style.display = "block";
+    }
+
+    closeBtn.onclick = function() {
+      modal.style.display = "none";
+    }
+
+    cancelBtn.onclick = function() {
+      modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+
+    // Edit recommendation functionality
+    const editButtons = document.querySelectorAll(".edit-btn");
+    editButtons.forEach(button => {
+      button.addEventListener("click", function() {
+        // In a real application, this would populate the form with the recommendation data
+        modal.style.display = "block";
+        // Populate form fields with recommendation data
+        document.getElementById("title").value = this.closest(".recommendation-box").querySelector(".recommendation-title").textContent;
+        document.getElementById("content").value = this.closest(".recommendation-box").querySelector(".recommendation-content").textContent.trim();
+        
+        // Set the category
+        const categoryText = this.closest(".recommendation-box").querySelector(".recommendation-category").textContent;
+        const categorySelect = document.getElementById("category");
+        for (let i = 0; i < categorySelect.options.length; i++) {
+          if (categorySelect.options[i].text === categoryText) {
+            categorySelect.selectedIndex = i;
+            break;
+          }
+        }
+      });
+    });
+
+    // Delete recommendation functionality
+    const deleteButtons = document.querySelectorAll(".delete-btn");
+    deleteButtons.forEach(button => {
+      button.addEventListener("click", function() {
+        if (confirm("Are you sure you want to delete this recommendation?")) {
+          // In a real application, this would send a request to delete the recommendation
+          this.closest(".recommendation-box").remove();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
