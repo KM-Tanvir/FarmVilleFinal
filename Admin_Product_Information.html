@@ -228,7 +228,6 @@
       border: none;
     }
 
-    /* Modal Styles */
     .modal {
       display: none;
       position: fixed;
@@ -495,11 +494,13 @@
             <input type="text" id="searchProduct" placeholder="Search products...">
           </div>
           <div class="filter-options">
-            <select id="categoryFilter">
-              <option value="">All Categories</option>
+            <select id="typeFilter">
+              <option value="">All Types</option>
               <option value="Vegetables">Vegetables</option>
               <option value="Fruits">Fruits</option>
               <option value="Grains">Grains</option>
+              <option value="Dairy">Dairy</option>
+              <option value="Meat">Meat</option>
             </select>
             <select id="statusFilter">
               <option value="">All Status</option>
@@ -513,15 +514,15 @@
           <thead>
             <tr>
               <th>Product Name</th>
-              <th>Category</th>
+              <th>Type</th>
+              <th>Variety</th>
+              <th>Seasonality</th>
               <th>Current Price</th>
-              <th>Stock Level</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            <!-- Product data will be loaded here -->
           </tbody>
         </table>
 
@@ -535,7 +536,6 @@
     </div>
   </div>
 
-  <!-- Add/Edit Product Modal -->
   <div id="productModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -549,21 +549,34 @@
           <input type="text" id="productName" required>
         </div>
         <div class="form-group">
-          <label for="productCategory">Category</label>
-          <select id="productCategory" required>
-            <option value="">Select Category</option>
+          <label for="productType">Type</label>
+          <select id="productType" required>
+            <option value="">Select Type</option>
             <option value="Vegetables">Vegetables</option>
             <option value="Fruits">Fruits</option>
             <option value="Grains">Grains</option>
+            <option value="Dairy">Dairy</option>
+            <option value="Meat">Meat</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="productVariety">Variety</label>
+          <input type="text" id="productVariety" required>
+        </div>
+        <div class="form-group">
+          <label for="productSeasonality">Seasonality</label>
+          <select id="productSeasonality" required>
+            <option value="">Select Season</option>
+            <option value="Spring">Spring</option>
+            <option value="Summer">Summer</option>
+            <option value="Fall">Fall</option>
+            <option value="Winter">Winter</option>
+            <option value="Year-Round">Year-Round</option>
           </select>
         </div>
         <div class="form-group">
           <label for="productPrice">Current Price (per unit)</label>
           <input type="number" id="productPrice" step="0.01" required>
-        </div>
-        <div class="form-group">
-          <label for="productStock">Stock Level</label>
-          <input type="number" id="productStock" required>
         </div>
         <div class="form-group">
           <label for="productUnit">Unit</label>
@@ -595,7 +608,6 @@
     </div>
   </div>
 
-  <!-- View Product Details Modal -->
   <div id="viewProductModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -604,9 +616,10 @@
       </div>
       <div id="productDetails">
         <h3 id="viewProductName"></h3>
-        <p><strong>Category:</strong> <span id="viewProductCategory"></span></p>
+        <p><strong>Type:</strong> <span id="viewProductType"></span></p>
+        <p><strong>Variety:</strong> <span id="viewProductVariety"></span></p>
+        <p><strong>Seasonality:</strong> <span id="viewProductSeasonality"></span></p>
         <p><strong>Current Price:</strong> $<span id="viewProductPrice"></span> per <span id="viewProductUnit"></span></p>
-        <p><strong>Stock Level:</strong> <span id="viewProductStock"></span> <span id="viewProductUnitDisplay"></span></p>
         <p><strong>Status:</strong> <span id="viewProductStatus"></span></p>
         <p><strong>Description:</strong></p>
         <p id="viewProductDescription"></p>
@@ -627,16 +640,16 @@
       document.getElementById("sidebar").classList.toggle("collapsed");
     }
     
-    // Sample product data for demonstration
     const products = [
-      { id: 1, name: "Corn", category: "Grains", price: 4.99, stock: 1500, unit: "bushel", description: "Non-GMO yellow corn, locally grown.", status: "Active" },
-      { id: 2, name: "Tomatoes", category: "Vegetables", price: 2.49, stock: 450, unit: "kg", description: "Organic heirloom tomatoes.", status: "Active" },
-      { id: 3, name: "Apples", category: "Fruits", price: 1.99, stock: 750, unit: "kg", description: "Fresh Gala apples.", status: "Active" },
-      { id: 4, name: "Wheat", category: "Grains", price: 6.75, stock: 2000, unit: "bushel", description: "Hard red winter wheat.", status: "Active" },
-      { id: 5, name: "Potatoes", category: "Vegetables", price: 0.89, stock: 1200, unit: "kg", description: "Russet potatoes, perfect for baking.", status: "Active" },
+      { id: 1, name: "Corn", type: "Grains", variety: "Yellow Dent", seasonality: "Summer", price: 4.99, stock: 1500, unit: "bushel", description: "Non-GMO yellow corn, locally grown.", status: "Active" },
+      { id: 2, name: "Tomatoes", type: "Vegetables", variety: "Heirloom", seasonality: "Summer", price: 2.49, stock: 450, unit: "kg", description: "Organic heirloom tomatoes.", status: "Active" },
+      { id: 3, name: "Apples", type: "Fruits", variety: "Gala", seasonality: "Fall", price: 1.99, stock: 750, unit: "kg", description: "Fresh Gala apples.", status: "Active" },
+      { id: 4, name: "Wheat", type: "Grains", variety: "Hard Red Winter", seasonality: "Fall", price: 6.75, stock: 2000, unit: "bushel", description: "Hard red winter wheat.", status: "Active" },
+      { id: 5, name: "Potatoes", type: "Vegetables", variety: "Russet", seasonality: "Year-Round", price: 0.89, stock: 1200, unit: "kg", description: "Russet potatoes, perfect for baking.", status: "Active" },
+      { id: 6, name: "Milk", type: "Dairy", variety: "Whole", seasonality: "Year-Round", price: 3.29, stock: 800, unit: "liter", description: "Fresh whole milk from local dairy farms.", status: "Active" },
+      { id: 7, name: "Beef", type: "Meat", variety: "Angus", seasonality: "Year-Round", price: 12.99, stock: 350, unit: "kg", description: "Premium grass-fed Angus beef.", status: "Active" }
     ];
 
-    // Display products in the table
     function displayProducts(productList) {
       const tableBody = document.querySelector("#productTable tbody");
       tableBody.innerHTML = "";
@@ -645,9 +658,10 @@
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${product.name}</td>
-          <td><span class="category-badge">${product.category}</span></td>
+          <td><span class="category-badge">${product.type}</span></td>
+          <td>${product.variety}</td>
+          <td>${product.seasonality}</td>
           <td>$${product.price.toFixed(2)}/${product.unit}</td>
-          <td>${product.stock} ${product.unit}</td>
           <td class="${product.status === 'Active' ? 'status-active' : 'status-inactive'}">${product.status}</td>
           <td class="action-buttons">
             <button class="action-btn view-btn" data-id="${product.id}">View</button>
@@ -658,7 +672,6 @@
         tableBody.appendChild(row);
       });
       
-      // Add event listeners to buttons
       document.querySelectorAll(".view-btn").forEach(btn => {
         btn.addEventListener("click", e => {
           const productId = parseInt(e.target.getAttribute("data-id"));
@@ -681,30 +694,28 @@
       });
     }
 
-    // Search and filter products
     function filterProducts() {
       const searchTerm = document.getElementById("searchProduct").value.toLowerCase();
-      const categoryFilter = document.getElementById("categoryFilter").value;
+      const typeFilter = document.getElementById("typeFilter").value;
       const statusFilter = document.getElementById("statusFilter").value;
       
       const filtered = products.filter(product => {
         const matchesSearch = product.name.toLowerCase().includes(searchTerm) || 
-                            product.description.toLowerCase().includes(searchTerm);
-        const matchesCategory = categoryFilter === "" || product.category === categoryFilter;
+                            product.description.toLowerCase().includes(searchTerm) ||
+                            product.variety.toLowerCase().includes(searchTerm);
+        const matchesType = typeFilter === "" || product.type === typeFilter;
         const matchesStatus = statusFilter === "" || product.status === statusFilter;
         
-        return matchesSearch && matchesCategory && matchesStatus;
+        return matchesSearch && matchesType && matchesStatus;
       });
       
       displayProducts(filtered);
     }
 
-    // Add event listeners to search and filter controls
     document.getElementById("searchProduct").addEventListener("input", filterProducts);
-    document.getElementById("categoryFilter").addEventListener("change", filterProducts);
+    document.getElementById("typeFilter").addEventListener("change", filterProducts);
     document.getElementById("statusFilter").addEventListener("change", filterProducts);
 
-    // Modal functions
     const productModal = document.getElementById("productModal");
     const viewProductModal = document.getElementById("viewProductModal");
     
@@ -736,7 +747,6 @@
       editProduct(productId);
     });
 
-    // Handle form submission
     document.getElementById("productForm").addEventListener("submit", (e) => {
       e.preventDefault();
       
@@ -744,23 +754,23 @@
       const product = {
         id: productId ? parseInt(productId) : Math.max(...products.map(p => p.id)) + 1,
         name: document.getElementById("productName").value,
-        category: document.getElementById("productCategory").value,
+        type: document.getElementById("productType").value,
+        variety: document.getElementById("productVariety").value,
+        seasonality: document.getElementById("productSeasonality").value,
         price: parseFloat(document.getElementById("productPrice").value),
-        stock: parseInt(document.getElementById("productStock").value),
+        stock: 0,
         unit: document.getElementById("productUnit").value,
         description: document.getElementById("productDescription").value,
         status: document.getElementById("productStatus").value
       };
       
       if (productId) {
-        // Update existing product
-        const index = products.findIndex(p => p.id === product.id);
+        const index = products.findIndex(p => p.id === parseInt(productId));
         if (index !== -1) {
           products[index] = product;
           showAlert("Product updated successfully!", "success");
         }
       } else {
-        // Add new product
         products.push(product);
         showAlert("Product added successfully!", "success");
       }
@@ -769,17 +779,16 @@
       displayProducts(products);
     });
 
-    // View product details
     function viewProduct(id) {
       const product = products.find(p => p.id === id);
       if (product) {
         document.getElementById("viewProductName").textContent = product.name;
         document.getElementById("viewProductName").setAttribute("data-id", product.id);
-        document.getElementById("viewProductCategory").textContent = product.category;
+        document.getElementById("viewProductType").textContent = product.type;
+        document.getElementById("viewProductVariety").textContent = product.variety;
+        document.getElementById("viewProductSeasonality").textContent = product.seasonality;
         document.getElementById("viewProductPrice").textContent = product.price.toFixed(2);
         document.getElementById("viewProductUnit").textContent = product.unit;
-        document.getElementById("viewProductStock").textContent = product.stock;
-        document.getElementById("viewProductUnitDisplay").textContent = product.unit;
         document.getElementById("viewProductStatus").textContent = product.status;
         document.getElementById("viewProductStatus").className = product.status === 'Active' ? 'status-active' : 'status-inactive';
         document.getElementById("viewProductDescription").textContent = product.description;
@@ -788,16 +797,16 @@
       }
     }
 
-    // Edit product
     function editProduct(id) {
       const product = products.find(p => p.id === id);
       if (product) {
         document.getElementById("modalTitle").textContent = "Edit Product";
         document.getElementById("productId").value = product.id;
         document.getElementById("productName").value = product.name;
-        document.getElementById("productCategory").value = product.category;
+        document.getElementById("productType").value = product.type;
+        document.getElementById("productVariety").value = product.variety;
+        document.getElementById("productSeasonality").value = product.seasonality;
         document.getElementById("productPrice").value = product.price;
-        document.getElementById("productStock").value = product.stock;
         document.getElementById("productUnit").value = product.unit;
         document.getElementById("productDescription").value = product.description;
         document.getElementById("productStatus").value = product.status;
@@ -806,7 +815,6 @@
       }
     }
 
-    // Delete product
     function confirmDelete(id) {
       if (confirm("Are you sure you want to delete this product?")) {
         const index = products.findIndex(p => p.id === id);
@@ -818,7 +826,6 @@
       }
     }
 
-    // Show alert message
     function showAlert(message, type) {
       const alertContainer = document.getElementById("alertContainer");
       alertContainer.textContent = message;
@@ -830,7 +837,6 @@
       }, 3000);
     }
 
-    // Initial load
     window.onload = function() {
       displayProducts(products);
     };

@@ -1,311 +1,480 @@
 <?php
 include "db.php";
-// Database configuration
-define('DB_SERVER', 'localhost');
-define('DB_USERNAME', 'farm_admin');
-define('DB_PASSWORD', 'your_secure_password');
-define('DB_NAME', 'farm_management_system');
+function sanitizeInput($data) {
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data);
+    return $data;
+}
 
-// Establish database connection
-function connectDB() {
-    $conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
+// Validate product data
+function validateProduct($product) {
+    $errors = [];
     
-    // Check connection
-    if ($conn->connect_error) {
-        die(json_encode(['error' => 'Database connection failed: ' . $conn->connect_error]));
+    if (empty($product['name'])) {
+        $errors[] = 'Product name is required';
     }
     
-    return $conn;
+    if (empty($product['type'])) {
+        $errors[] = 'Product type is required';
+    }
+    
+    if (empty($product['variety'])) {
+        $errors[] = 'Product variety is required';
+    }
+    
+    if (empty($product['seasonality'])) {
+        $errors[] = 'Seasonality is required';
+    }
+    
+    if (!isset($product['price']) || !is_numeric($product['price']) || $product['price'] < 0) {
+        $errors[] = 'Valid price is required';
+    }
+    
+    if (empty($product['unit'])) {
+        $errors[] = 'Unit is required';
+    }
+    
+    if (empty($product['status'])) {
+        $errors[] = 'Status is required';
+    }
+    
+    return $errors;
 }
+
+// Get all products with optional filtering
+function getProducts($conn, $filters = []) {
+    try {
+        $sql = "SELECT * FROM products WHERE 1=1";
+        $params = [];
+        
+        // Apply search filter
+        if (!empty($filters['search'])) {
+            $searchTerm = "%{$filters['search']}%";
+            $sql .= " AND (name LIKE ? OR description LIKE ? OR variety LIKE ?)";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+        }
+        
+        // Apply type filter
+        if (!empty($filters['type'])) {
+            $sql .= " AND type = ?";
+            $params[] = $filters['type'];
+        }
+        
+        // Apply status filter
+        if (!empty($filters['status'])) {
+            $sql .= " AND status = ?";
+            $params[] = $filters['status'];
+        }
+        
+        // Add sorting
+        $sql .= " ORDER BY name ASC";
+        
+        // Add pagination
+        if (isset($filters['page']) && isset($filters['limit'])) {
+            $page = max(1, (int)$filters['page']);
+            $limit = max(1, (int)$filters['limit']);
+            $offset = ($page - 1) * $limit;
+            $sql .= " LIMIT $limit OFFSET $offset";
+        }
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($params);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        header('HTTP/1.1 500 Internal Server Error');
+        echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// Get product count (for pagination)
+function getProductCount($conn, $filters = []) {
+    try {
+        $sql = "SELECT COUNT(*) as total FROM products WHERE 1=1";
+        $params = [];
+        
+        // Apply search filter
+        if (!empty($filters['search'])) {
+            $searchTerm = "%{$filters['search']}%";
+            $sql .= " AND (name LIKE ? OR description LIKE ? OR variety LIKE ?)";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+        }
+        
+        // Apply type filter
+        if (!empty($filters['type'])) {
+            $sql .= " AND type = ?";
+            $params[] = $filters['type'];
+        }
+        
+        // Apply status filter
+        if (!empty($filters['status'])) {
+            $sql .= " AND status = ?";
+            $params[] = $filters['status'];
+        }
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($params);
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    } catch (PDOException $e) {
+        header('HTTP/1.1 500 Internal Server Error');
+        echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// Get product by ID
+function getProductById($conn, $id) {
+    try {
+        $stmt = $conn->prepare("SELECT * FROM products WHERE id = ?");
+        $stmt->execute([$id]);
+        
+        $product = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$product) {
+            return null;
+        }
+        
+        return $product;
+    } catch (PDOException $e) {
+        header('HTTP/1.1 500 Internal Server Error');
+        echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// Create new product
+function createProduct($conn, $productData) {
+    try {
+        $sql = "INSERT INTO products (name, type, variety, seasonality, price, unit, description, status, created_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([
+            $productData['name'],
+            $productData['type'],
+            $productData['variety'],
+            $productData['seasonality'],
+            $productData['price'],
+            $productData['unit'],
+            $productData['description'],
+            $productData['status']
+        ]);
+        
+        return $conn->lastInsertId();
+    } catch (PDOException $e) {
+        header('HTTP/1.1 500 Internal Server Error');
+        echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// Update existing product
+function updateProduct($conn, $id, $productData) {
+    try {
+        $sql = "UPDATE products SET 
+                name = ?, 
+                type = ?, 
+                variety = ?, 
+                seasonality = ?, 
+                price = ?, 
+                unit = ?, 
+                description = ?, 
+                status = ?,
+                updated_at = NOW()
+                WHERE id = ?";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([
+            $productData['name'],
+            $productData['type'],
+            $productData['variety'],
+            $productData['seasonality'],
+            $productData['price'],
+            $productData['unit'],
+            $productData['description'],
+            $productData['status'],
+            $id
+        ]);
+        
+        return $stmt->rowCount() > 0;
+    } catch (PDOException $e) {
+        header('HTTP/1.1 500 Internal Server Error');
+        echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// Delete product
+function deleteProduct($conn, $id) {
+    try {
+        $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
+        $stmt->execute([$id]);
+        
+        return $stmt->rowCount() > 0;
+    } catch (PDOException $e) {
+        header('HTTP/1.1 500 Internal Server Error');
+        echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// Get product price history
+function getProductPriceHistory($conn, $productId) {
+    try {
+        $stmt = $conn->prepare("
+            SELECT price, recorded_date 
+            FROM product_price_history 
+            WHERE product_id = ? 
+            ORDER BY recorded_date ASC
+        ");
+        $stmt->execute([$productId]);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        header('HTTP/1.1 500 Internal Server Error');
+        echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// Update product price and record in history
+function updateProductPrice($conn, $productId, $newPrice) {
+    try {
+        // Begin transaction
+        $conn->beginTransaction();
+        
+        // Update the current price
+        $stmtUpdate = $conn->prepare("UPDATE products SET price = ?, updated_at = NOW() WHERE id = ?");
+        $stmtUpdate->execute([$newPrice, $productId]);
+        
+        // Record the price change in history
+        $stmtHistory = $conn->prepare("
+            INSERT INTO product_price_history (product_id, price, recorded_date)
+            VALUES (?, ?, NOW())
+        ");
+        $stmtHistory->execute([$productId, $newPrice]);
+        
+        // Commit transaction
+        $conn->commit();
+        
+        return true;
+    } catch (PDOException $e) {
+        // Roll back transaction on error
+        $conn->rollBack();
+        
+        header('HTTP/1.1 500 Internal Server Error');
+        echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// Get available product types
+function getProductTypes($conn) {
+    try {
+        $stmt = $conn->prepare("SELECT DISTINCT type FROM products ORDER BY type");
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    } catch (PDOException $e) {
+        header('HTTP/1.1 500 Internal Server Error');
+        echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// API request handler
+// Check request method and handle accordingly
+$requestMethod = $_SERVER['REQUEST_METHOD'];
+$conn = getDBConnection();
 
 // Set headers for JSON response
 header('Content-Type: application/json');
 
-// Get the request method
-$requestMethod = $_SERVER['REQUEST_METHOD'];
-
-// Handle different request methods
+// Handle API requests based on HTTP method
 switch ($requestMethod) {
     case 'GET':
+        // Check if we're getting a list or a specific product
         if (isset($_GET['id'])) {
-            // Get specific product
-            getProduct($_GET['id']);
-        } else {
-            // Get all products with optional filters
-            $search = isset($_GET['search']) ? $_GET['search'] : '';
-            $category = isset($_GET['category']) ? $_GET['category'] : '';
-            $status = isset($_GET['status']) ? $_GET['status'] : '';
+            $productId = (int)$_GET['id'];
+            $product = getProductById($conn, $productId);
             
-            getProducts($search, $category, $status);
+            if ($product) {
+                if (isset($_GET['include_price_history']) && $_GET['include_price_history'] === 'true') {
+                    $product['price_history'] = getProductPriceHistory($conn, $productId);
+                }
+                echo json_encode(['success' => true, 'data' => $product]);
+            } else {
+                header('HTTP/1.1 404 Not Found');
+                echo json_encode(['error' => 'Product not found']);
+            }
+        } else {
+            // Get filter parameters
+            $filters = [
+                'search' => isset($_GET['search']) ? sanitizeInput($_GET['search']) : '',
+                'type' => isset($_GET['type']) ? sanitizeInput($_GET['type']) : '',
+                'status' => isset($_GET['status']) ? sanitizeInput($_GET['status']) : '',
+                'page' => isset($_GET['page']) ? (int)$_GET['page'] : 1,
+                'limit' => isset($_GET['limit']) ? (int)$_GET['limit'] : 10
+            ];
+            
+            $products = getProducts($conn, $filters);
+            $total = getProductCount($conn, $filters);
+            
+            echo json_encode([
+                'success' => true, 
+                'data' => $products,
+                'pagination' => [
+                    'total' => $total,
+                    'page' => $filters['page'],
+                    'limit' => $filters['limit'],
+                    'pages' => ceil($total / $filters['limit'])
+                ]
+            ]);
         }
         break;
         
     case 'POST':
-        // Add new product
-        $data = json_decode(file_get_contents('php://input'), true);
-        addProduct($data);
+        checkAuth(); // Ensure user is authenticated
+        
+        // Get JSON data from request body
+        $jsonData = file_get_contents('php://input');
+        $data = json_decode($jsonData, true);
+        
+        if (!$data) {
+            header('HTTP/1.1 400 Bad Request');
+            echo json_encode(['error' => 'Invalid JSON data']);
+            break;
+        }
+        
+        // Clean and validate data
+        $productData = [
+            'name' => sanitizeInput($data['name'] ?? ''),
+            'type' => sanitizeInput($data['type'] ?? ''),
+            'variety' => sanitizeInput($data['variety'] ?? ''),
+            'seasonality' => sanitizeInput($data['seasonality'] ?? ''),
+            'price' => isset($data['price']) ? (float)$data['price'] : 0,
+            'unit' => sanitizeInput($data['unit'] ?? ''),
+            'description' => sanitizeInput($data['description'] ?? ''),
+            'status' => sanitizeInput($data['status'] ?? 'Active')
+        ];
+        
+        // Validate product data
+        $errors = validateProduct($productData);
+        if (!empty($errors)) {
+            header('HTTP/1.1 400 Bad Request');
+            echo json_encode(['error' => 'Validation failed', 'details' => $errors]);
+            break;
+        }
+        
+        // Create new product
+        $newProductId = createProduct($conn, $productData);
+        
+        // Return success response with the new product ID
+        echo json_encode(['success' => true, 'message' => 'Product created successfully', 'id' => $newProductId]);
         break;
         
     case 'PUT':
-        // Update existing product
-        $data = json_decode(file_get_contents('php://input'), true);
-        if (isset($_GET['id'])) {
-            updateProduct($_GET['id'], $data);
+        checkAuth(); // Ensure user is authenticated
+        
+        // Check if ID is provided
+        if (!isset($_GET['id'])) {
+            header('HTTP/1.1 400 Bad Request');
+            echo json_encode(['error' => 'Product ID is required']);
+            break;
+        }
+        
+        $productId = (int)$_GET['id'];
+        
+        // Check if product exists
+        $existingProduct = getProductById($conn, $productId);
+        if (!$existingProduct) {
+            header('HTTP/1.1 404 Not Found');
+            echo json_encode(['error' => 'Product not found']);
+            break;
+        }
+        
+        // Get JSON data from request body
+        $jsonData = file_get_contents('php://input');
+        $data = json_decode($jsonData, true);
+        
+        if (!$data) {
+            header('HTTP/1.1 400 Bad Request');
+            echo json_encode(['error' => 'Invalid JSON data']);
+            break;
+        }
+        
+        // Clean and validate data
+        $productData = [
+            'name' => sanitizeInput($data['name'] ?? $existingProduct['name']),
+            'type' => sanitizeInput($data['type'] ?? $existingProduct['type']),
+            'variety' => sanitizeInput($data['variety'] ?? $existingProduct['variety']),
+            'seasonality' => sanitizeInput($data['seasonality'] ?? $existingProduct['seasonality']),
+            'price' => isset($data['price']) ? (float)$data['price'] : $existingProduct['price'],
+            'unit' => sanitizeInput($data['unit'] ?? $existingProduct['unit']),
+            'description' => sanitizeInput($data['description'] ?? $existingProduct['description']),
+            'status' => sanitizeInput($data['status'] ?? $existingProduct['status'])
+        ];
+        
+        // Validate product data
+        $errors = validateProduct($productData);
+        if (!empty($errors)) {
+            header('HTTP/1.1 400 Bad Request');
+            echo json_encode(['error' => 'Validation failed', 'details' => $errors]);
+            break;
+        }
+        
+        // Check if price has changed
+        $priceChanged = $productData['price'] != $existingProduct['price'];
+        
+        // Update product
+        $updated = updateProduct($conn, $productId, $productData);
+        
+        // If price changed, record it in history
+        if ($updated && $priceChanged) {
+            updateProductPrice($conn, $productId, $productData['price']);
+        }
+        
+        if ($updated) {
+            echo json_encode(['success' => true, 'message' => 'Product updated successfully']);
         } else {
-            echo json_encode(['error' => 'Product ID is required for update']);
+            header('HTTP/1.1 500 Internal Server Error');
+            echo json_encode(['error' => 'Failed to update product']);
         }
         break;
         
     case 'DELETE':
-        // Delete product
-        if (isset($_GET['id'])) {
-            deleteProduct($_GET['id']);
+        checkAuth(); // Ensure user is authenticated
+        
+        // Check if ID is provided
+        if (!isset($_GET['id'])) {
+            header('HTTP/1.1 400 Bad Request');
+            echo json_encode(['error' => 'Product ID is required']);
+            break;
+        }
+        
+        $productId = (int)$_GET['id'];
+        
+        // Delete the product
+        $deleted = deleteProduct($conn, $productId);
+        
+        if ($deleted) {
+            echo json_encode(['success' => true, 'message' => 'Product deleted successfully']);
         } else {
-            echo json_encode(['error' => 'Product ID is required for deletion']);
+            header('HTTP/1.1 404 Not Found');
+            echo json_encode(['error' => 'Product not found or could not be deleted']);
         }
         break;
         
     default:
-        echo json_encode(['error' => 'Invalid request method']);
+        header('HTTP/1.1 405 Method Not Allowed');
+        echo json_encode(['error' => 'Method not allowed']);
         break;
 }
-
-// Function to get all products with optional filters
-function getProducts($search = '', $category = '', $status = '') {
-    $conn = connectDB();
-    
-    // Base query
-    $sql = "SELECT * FROM products WHERE 1=1";
-    
-    // Add filters if provided
-    if (!empty($search)) {
-        $search = $conn->real_escape_string($search);
-        $sql .= " AND (name LIKE '%$search%' OR description LIKE '%$search%')";
-    }
-    
-    if (!empty($category)) {
-        $category = $conn->real_escape_string($category);
-        $sql .= " AND category = '$category'";
-    }
-    
-    if (!empty($status)) {
-        $status = $conn->real_escape_string($status);
-        $sql .= " AND status = '$status'";
-    }
-    
-    $sql .= " ORDER BY name ASC";
-    
-    $result = $conn->query($sql);
-    
-    if ($result) {
-        $products = [];
-        while ($row = $result->fetch_assoc()) {
-            $products[] = $row;
-        }
-        echo json_encode(['success' => true, 'data' => $products]);
-    } else {
-        echo json_encode(['error' => 'Error fetching products: ' . $conn->error]);
-    }
-    
-    $conn->close();
-}
-
-// Function to get a specific product by ID
-function getProduct($id) {
-    $conn = connectDB();
-    
-    $id = $conn->real_escape_string($id);
-    $sql = "SELECT * FROM products WHERE id = $id";
-    
-    $result = $conn->query($sql);
-    
-    if ($result && $result->num_rows > 0) {
-        $product = $result->fetch_assoc();
-        echo json_encode(['success' => true, 'data' => $product]);
-    } else {
-        echo json_encode(['error' => 'Product not found']);
-    }
-    
-    $conn->close();
-}
-
-// Function to add a new product
-function addProduct($data) {
-    $conn = connectDB();
-    
-    // Validate required fields
-    if (!isset($data['name']) || !isset($data['category']) || !isset($data['price']) || 
-        !isset($data['stock']) || !isset($data['unit']) || !isset($data['status'])) {
-        echo json_encode(['error' => 'Missing required fields']);
-        return;
-    }
-    
-    // Sanitize inputs
-    $name = $conn->real_escape_string($data['name']);
-    $category = $conn->real_escape_string($data['category']);
-    $price = floatval($data['price']);
-    $stock = intval($data['stock']);
-    $unit = $conn->real_escape_string($data['unit']);
-    $description = isset($data['description']) ? $conn->real_escape_string($data['description']) : '';
-    $status = $conn->real_escape_string($data['status']);
-    
-    // Insert product
-    $sql = "INSERT INTO products (name, category, price, stock, unit, description, status, created_at) 
-            VALUES ('$name', '$category', $price, $stock, '$unit', '$description', '$status', NOW())";
-    
-    if ($conn->query($sql) === TRUE) {
-        $newId = $conn->insert_id;
-        echo json_encode(['success' => true, 'message' => 'Product added successfully', 'id' => $newId]);
-    } else {
-        echo json_encode(['error' => 'Error adding product: ' . $conn->error]);
-    }
-    
-    $conn->close();
-}
-
-// Function to update an existing product
-function updateProduct($id, $data) {
-    $conn = connectDB();
-    
-    // Sanitize inputs
-    $id = $conn->real_escape_string($id);
-    
-    // Build update fields
-    $updateFields = [];
-    
-    if (isset($data['name'])) {
-        $name = $conn->real_escape_string($data['name']);
-        $updateFields[] = "name = '$name'";
-    }
-    
-    if (isset($data['category'])) {
-        $category = $conn->real_escape_string($data['category']);
-        $updateFields[] = "category = '$category'";
-    }
-    
-    if (isset($data['price'])) {
-        $price = floatval($data['price']);
-        $updateFields[] = "price = $price";
-    }
-    
-    if (isset($data['stock'])) {
-        $stock = intval($data['stock']);
-        $updateFields[] = "stock = $stock";
-    }
-    
-    if (isset($data['unit'])) {
-        $unit = $conn->real_escape_string($data['unit']);
-        $updateFields[] = "unit = '$unit'";
-    }
-    
-    if (isset($data['description'])) {
-        $description = $conn->real_escape_string($data['description']);
-        $updateFields[] = "description = '$description'";
-    }
-    
-    if (isset($data['status'])) {
-        $status = $conn->real_escape_string($data['status']);
-        $updateFields[] = "status = '$status'";
-    }
-    
-    $updateFields[] = "updated_at = NOW()";
-    
-    // Execute update if there are fields to update
-    if (count($updateFields) > 0) {
-        $sql = "UPDATE products SET " . implode(', ', $updateFields) . " WHERE id = $id";
-        
-        if ($conn->query($sql) === TRUE) {
-            echo json_encode(['success' => true, 'message' => 'Product updated successfully']);
-        } else {
-            echo json_encode(['error' => 'Error updating product: ' . $conn->error]);
-        }
-    } else {
-        echo json_encode(['warning' => 'No fields to update']);
-    }
-    
-    $conn->close();
-}
-
-// Function to delete a product
-function deleteProduct($id) {
-    $conn = connectDB();
-    
-    $id = $conn->real_escape_string($id);
-    $sql = "DELETE FROM products WHERE id = $id";
-    
-    if ($conn->query($sql) === TRUE) {
-        echo json_encode(['success' => true, 'message' => 'Product deleted successfully']);
-    } else {
-        echo json_encode(['error' => 'Error deleting product: ' . $conn->error]);
-    }
-    
-    $conn->close();
-}
-
-// Function to get price history for a product (for the chart)
-function getPriceHistory($id) {
-    $conn = connectDB();
-    
-    $id = $conn->real_escape_string($id);
-    $sql = "SELECT price, date_changed FROM product_price_history WHERE product_id = $id ORDER BY date_changed ASC";
-    
-    $result = $conn->query($sql);
-    
-    if ($result) {
-        $priceHistory = [];
-        while ($row = $result->fetch_assoc()) {
-            $priceHistory[] = $row;
-        }
-        echo json_encode(['success' => true, 'data' => $priceHistory]);
-    } else {
-        echo json_encode(['error' => 'Error fetching price history: ' . $conn->error]);
-    }
-    
-    $conn->close();
-}
-
-// Check if we need to create the database tables
-function setupDatabase() {
-    $conn = connectDB();
-    
-    // Create products table if it doesn't exist
-    $sql = "CREATE TABLE IF NOT EXISTS products (
-        id INT(11) AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        category VARCHAR(100) NOT NULL,
-        price DECIMAL(10,2) NOT NULL,
-        stock INT(11) NOT NULL,
-        unit VARCHAR(50) NOT NULL,
-        description TEXT,
-        status ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Active',
-        created_at DATETIME NOT NULL,
-        updated_at DATETIME DEFAULT NULL
-    )";
-    
-    if ($conn->query($sql) !== TRUE) {
-        echo json_encode(['error' => 'Error creating products table: ' . $conn->error]);
-        return;
-    }
-    
-    // Create price history table if it doesn't exist
-    $sql = "CREATE TABLE IF NOT EXISTS product_price_history (
-        id INT(11) AUTO_INCREMENT PRIMARY KEY,
-        product_id INT(11) NOT NULL,
-        price DECIMAL(10,2) NOT NULL,
-        date_changed DATETIME NOT NULL,
-        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-    )";
-    
-    if ($conn->query($sql) !== TRUE) {
-        echo json_encode(['error' => 'Error creating price history table: ' . $conn->error]);
-        return;
-    }
-    
-    echo json_encode(['success' => true, 'message' => 'Database tables created successfully']);
-    
-    $conn->close();
-}
-
-// Uncomment the following line to setup database tables
-// if (isset($_GET['setup'])) setupDatabase();
-?>
