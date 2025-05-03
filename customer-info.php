@@ -885,7 +885,7 @@ $initials = generateInitials($customer['first_name'] . ' ' . $customer['last_nam
       </a>
     </div>
 
-    <a href="/customer-info.php" title="My Account">
+    <a href="customer-info.php" title="My Account">
       <div class="account-icon" style="background-color: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">
         <?php echo $initials; ?>
       </div>

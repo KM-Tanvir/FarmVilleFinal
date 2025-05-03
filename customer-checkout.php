@@ -1,3 +1,154 @@
+<?php
+require_once 'config.php';
+
+
+// Initialize database connection
+$conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Simple login simulation (replace with your actual login logic)
+if (!isset($_SESSION['customer_id'])) {
+    // For demo purposes, we'll auto-login the first customer
+    $result = $conn->query("SELECT CustomerID FROM customer_t LIMIT 1");
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $_SESSION['customer_id'] = $row['CustomerID'];
+    } else {
+        // If no customers exist, redirect to login
+        header("Location: Login_Page.php");
+        exit();
+    }
+  }
+  
+
+// Process form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate and sanitize input data
+    $firstName = $conn->real_escape_string($_POST['firstName'] ?? '');
+    $lastName = $conn->real_escape_string($_POST['lastName'] ?? '');
+    $email = $conn->real_escape_string($_POST['email'] ?? '');
+    $phone = $conn->real_escape_string($_POST['phone'] ?? '');
+    $houseNo = $conn->real_escape_string($_POST['houseNo'] ?? '');
+    $street = $conn->real_escape_string($_POST['street'] ?? '');
+    $postOffice = $conn->real_escape_string($_POST['postOffice'] ?? '');
+    $zipCode = $conn->real_escape_string($_POST['zipCode'] ?? '');
+    $district = $conn->real_escape_string($_POST['district'] ?? '');
+    $division = $conn->real_escape_string($_POST['division'] ?? '');
+    $paymentMethod = $conn->real_escape_string($_POST['paymentMethod'] ?? '');
+    $deliveryMethod = $conn->real_escape_string($_POST['deliveryMethod'] ?? '');
+    $deliveryNotes = $conn->real_escape_string($_POST['deliveryNotes'] ?? '');
+    $orderNotes = $conn->real_escape_string($_POST['orderNotes'] ?? '');
+    $farmUpdates = isset($_POST['farmUpdates']) ? 1 : 0;
+    
+    // Calculate delivery fee based on method
+    $deliveryFee = 80; // Default standard delivery
+    switch ($deliveryMethod) {
+        case 'express':
+            $deliveryFee = 150;
+            break;
+        case 'pickup':
+            $deliveryFee = 0;
+            break;
+    }
+    
+    // Get cart items from session
+    $cart = $_SESSION['cart'] ?? [];
+    
+    if (empty($cart)) {
+        die("Your cart is empty. Please add items before checking out.");
+    }
+    
+    // Calculate subtotal
+    $subtotal = 0;
+    foreach ($cart as $item) {
+        $subtotal += $item['price'] * $item['quantity'];
+    }
+    
+    $total = $subtotal + $deliveryFee;
+    
+    // Create delivery address string
+    $deliveryAddress = "$houseNo, $street, $postOffice, $district, $division - $zipCode";
+    
+    // Start transaction
+    $conn->begin_transaction();
+    
+    try {
+        // Insert order into database
+        $stmt = $conn->prepare("INSERT INTO order_t (CustomerID, total_amount, delivery_fee, payment_method, delivery_address, order_status, order_date) 
+                               VALUES (?, ?, ?, ?, ?, 'Pending', NOW())");
+        $stmt->bind_param("iddss", $_SESSION['customer_id'], $total, $deliveryFee, $paymentMethod, $deliveryAddress);
+        $stmt->execute();
+        $orderId = $stmt->insert_id;
+        $stmt->close();
+        
+        // Insert order items
+        $stmt = $conn->prepare("INSERT INTO order_items (order_id, product_id, qty_kg, price_per_kg) 
+                               VALUES (?, ?, ?, ?)");
+        
+        foreach ($cart as $item) {
+            // Get product ID from product name
+            $productId = 0;
+            $productQuery = $conn->prepare("SELECT product_id FROM product_t WHERE product_name = ? LIMIT 1");
+            $productQuery->bind_param("s", $item['crop']);
+            $productQuery->execute();
+            $productResult = $productQuery->get_result();
+            if ($productResult->num_rows > 0) {
+                $productRow = $productResult->fetch_assoc();
+                $productId = $productRow['product_id'];
+            }
+            $productQuery->close();
+            
+            $stmt->bind_param("iidd", $orderId, $productId, $item['quantity'], $item['price']);
+            $stmt->execute();
+        }
+        
+        $stmt->close();
+        
+        // Commit transaction
+        $conn->commit();
+        
+        // Clear cart
+        $_SESSION['cart'] = [];
+        
+        // Redirect to order confirmation
+        header("Location: customer-order-history.php?order_id=$orderId");
+        exit();
+        
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        $conn->rollback();
+        die("Error processing your order: " . $e->getMessage());
+    }
+}
+
+// Get cart items for display
+$cart = $_SESSION['cart'] ?? [];
+$subtotal = 0;
+foreach ($cart as $item) {
+    $subtotal += $item['price'] * $item['quantity'];
+}
+$deliveryFee = 80; // Default standard delivery
+$total = $subtotal + $deliveryFee;
+
+// Get customer details if available
+$customerDetails = [];
+if (isset($_SESSION['customer_id'])) {
+    $stmt = $conn->prepare("SELECT first_name, last_name, email, phone, address_line1, address_line2, city 
+                           FROM customer_t WHERE CustomerID = ?");
+    $stmt->bind_param("i", $_SESSION['customer_id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        $customerDetails = $result->fetch_assoc();
+    }
+    $stmt->close();
+}
+
+$conn->close();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -731,15 +882,15 @@ footer::before {
   
   <div class="header-right">
     <div class="cart-icon">
-      <a href="/customer-order-history.html" title="Shopping Cart">
+      <a href="customer-order-history.php" title="Shopping Cart">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
           <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
         </svg>
-        <span class="cart-count">0</span>
+        <span class="cart-count" id="cartCount"><?php echo array_reduce($cart, function($carry, $item) { return $carry + $item['quantity']; }, 0); ?></span>
       </a>
     </div>
     
-    <a href="/customer-info.html" title="My Account">
+    <a href="customer-info.php" title="My Account">
       <img src="account-icon.png" alt="My Account" class="account-icon">
     </a>
   </div>
@@ -747,12 +898,11 @@ footer::before {
 
 <!-- Sidebar Navigation -->
 <div class="sidebar" id="sidebar">
-  <a href="customer-homepage.html"><i class="fas fa-home"></i> Home</a>
-  <a href="customer-product-catalog.html"><i class="fas fa-shopping-basket"></i> Browse Products</a>
-  <a href="customer-market-insights.html"><i class="fas fa-chart-line"></i> Market Insights</a>
-  <a href="customer-order-history.html"><i class="fas fa-history"></i> My Orders</a>
+  <a href="customer-homepage.php"><i class="fas fa-home"></i> Home</a>
+  <a href="customer-product-catalog.php"><i class="fas fa-shopping-basket"></i> Browse Products</a>
+  <a href="customer-order-history.php"><i class="fas fa-history"></i> My Orders</a>
   <a href="customer-feedback.html"><i class="fas fa-comment-alt"></i> Feedbacks</a>
-  <a href="Login_Page.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  <a href="Login_Page.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </div>
 
 <!-- Sidebar Toggle Button -->
@@ -770,47 +920,53 @@ footer::before {
   </section>
 
   <section class="content-box">
-    <form id="orderForm">
+    <form id="orderForm" method="POST">
       <!-- Order Summary -->
       <div class="form-section">
         <h3><i class="fas fa-shopping-cart"></i> Order Summary</h3>
         
         <!-- Empty cart message (initially hidden) -->
-        <div id="emptyCartMessage" style="display: none;">
-          <p>Your cart is empty. <a href="customer-product-catalog.html">Browse products</a> to add items to your cart.</p>
+        <div id="emptyCartMessage" style="display: <?php echo empty($cart) ? 'block' : 'none'; ?>;">
+          <p>Your cart is empty. <a href="customer-product-catalog.php">Browse products</a> to add items to your cart.</p>
         </div>
         
         <!-- Cart items table (will be populated from cart data) -->
-        <div class="cart-items-summary" id="cartItemsSummary">
+        <div class="cart-items-summary" id="cartItemsSummary" style="display: <?php echo empty($cart) ? 'none' : 'block'; ?>;">
           <table>
             <thead>
               <tr>
                 <th>Product</th>
                 <th>Price</th>
-                <th>Vendor</th>
                 <th>Quantity</th>
                 <th>Subtotal</th>
               </tr>
             </thead>
             <tbody id="cartItemsList">
-              <!-- Cart items will be dynamically inserted here -->
+              <?php foreach ($cart as $item): ?>
+                <tr>
+                  <td><?php echo htmlspecialchars($item['crop']); ?></td>
+                  <td><?php echo htmlspecialchars($item['price']); ?> ৳</td>
+                  <td><?php echo htmlspecialchars($item['quantity']); ?></td>
+                  <td><?php echo (float)$item['price'] * (float)$item['quantity']; ?> ৳</td>
+                </tr>
+              <?php endforeach; ?>
             </tbody>
           </table>
         </div>
         
         <!-- Order summary totals -->
-        <div class="order-summary" id="orderSummarySection">
+        <div class="order-summary" id="orderSummarySection" style="display: <?php echo empty($cart) ? 'none' : 'block'; ?>;">
           <div class="summary-row">
             <span>Subtotal</span>
-            <span id="subtotal">0 ৳</span>
+            <span id="subtotal"><?php echo $subtotal; ?> ৳</span>
           </div>
           <div class="summary-row">
             <span>Shipping</span>
-            <span id="deliveryFee">100 ৳</span>
+            <span id="deliveryFee"><?php echo $deliveryFee; ?> ৳</span>
           </div>
           <div class="summary-row total-row">
             <span>Total</span>
-            <span id="total">0 ৳</span>
+            <span id="total"><?php echo $total; ?> ৳</span>
           </div>
         </div>
       </div>
@@ -821,21 +977,25 @@ footer::before {
         <div class="form-row">
           <div class="form-group">
             <label for="firstName" class="form-label required-field">First Name</label>
-            <input type="text" id="firstName" class="form-control" required>
+            <input type="text" id="firstName" name="firstName" class="form-control" required 
+                   value="<?php echo isset($customerDetails['first_name']) ? htmlspecialchars($customerDetails['first_name']) : ''; ?>">
           </div>
           <div class="form-group">
             <label for="lastName" class="form-label required-field">Last Name</label>
-            <input type="text" id="lastName" class="form-control" required>
+            <input type="text" id="lastName" name="lastName" class="form-control" required
+                   value="<?php echo isset($customerDetails['last_name']) ? htmlspecialchars($customerDetails['last_name']) : ''; ?>">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label for="email" class="form-label required-field">Email Address</label>
-            <input type="email" id="email" class="form-control" required>
+            <input type="email" id="email" name="email" class="form-control" required
+                   value="<?php echo isset($customerDetails['email']) ? htmlspecialchars($customerDetails['email']) : ''; ?>">
           </div>
           <div class="form-group">
             <label for="phone" class="form-label required-field">Phone Number</label>
-            <input type="tel" id="phone" class="form-control" required>
+            <input type="tel" id="phone" name="phone" class="form-control" required
+                   value="<?php echo isset($customerDetails['phone']) ? htmlspecialchars($customerDetails['phone']) : ''; ?>">
           </div>
         </div>
       </div>
@@ -846,30 +1006,33 @@ footer::before {
         <div class="form-row">
           <div class="form-group">
             <label for="houseNo" class="form-label required-field">House Number</label>
-            <input type="text" id="houseNo" class="form-control" required>
+            <input type="text" id="houseNo" name="houseNo" class="form-control" required
+                   value="<?php echo isset($customerDetails['address_line1']) ? htmlspecialchars($customerDetails['address_line1']) : ''; ?>">
           </div>
           <div class="form-group">
             <label for="street" class="form-label">Street</label>
-            <input type="text" id="street" class="form-control">
+            <input type="text" id="street" name="street" class="form-control"
+                   value="<?php echo isset($customerDetails['address_line2']) ? htmlspecialchars($customerDetails['address_line2']) : ''; ?>">
           </div>
         </div>
         <div class="form-group">
           <label for="postOffice" class="form-label">Post Office</label>
-          <input type="text" id="postOffice" class="form-control">
+          <input type="text" id="postOffice" name="postOffice" class="form-control">
         </div>
         <div class="form-row">
           <div class="form-group">
             <label for="zipCode" class="form-label required-field">ZIP/Postal Code</label>
-            <input type="text" id="zipCode" class="form-control" required>
+            <input type="text" id="zipCode" name="zipCode" class="form-control" required>
           </div>
           <div class="form-group">
             <label for="district" class="form-label required-field">District</label>
-            <input type="text" id="district" class="form-control" required>
+            <input type="text" id="district" name="district" class="form-control" required
+                   value="<?php echo isset($customerDetails['city']) ? htmlspecialchars($customerDetails['city']) : ''; ?>">
           </div>
         </div>
         <div class="form-group">
           <label for="division" class="form-label required-field">Division</label>
-          <select id="division" class="form-select" required>
+          <select id="division" name="division" class="form-select" required>
             <option value="">Select Division</option>
             <option value="dhaka">Dhaka</option>
             <option value="chattogram">Chattogram</option>
@@ -887,16 +1050,16 @@ footer::before {
       <div class="form-section">
         <h3><i class="fas fa-credit-card"></i> Payment Method</h3>
         <div class="payment-options">
-          <div class="payment-option" onclick="document.getElementById('creditCard').click()">
-            <input type="radio" id="creditCard" name="paymentMethod" value="creditCard" checked onclick="showPaymentDetails('creditCard')">
+          <div class="payment-option selected" onclick="document.getElementById('creditCard').click()">
+            <input type="radio" id="creditCard" name="paymentMethod" value="Credit Card" checked onclick="showPaymentDetails('creditCard')">
             <label for="creditCard">Credit Card</label>
           </div>
           <div class="payment-option" onclick="document.getElementById('mobileMoney').click()">
-            <input type="radio" id="mobileMoney" name="paymentMethod" value="mobileMoney" onclick="showPaymentDetails('mobileMoney')">
+            <input type="radio" id="mobileMoney" name="paymentMethod" value="Mobile Money" onclick="showPaymentDetails('mobileMoney')">
             <label for="mobileMoney">Mobile Money</label>
           </div>
           <div class="payment-option" onclick="document.getElementById('cashOnDelivery').click()">
-            <input type="radio" id="cashOnDelivery" name="paymentMethod" value="cashOnDelivery" onclick="showPaymentDetails('cashOnDelivery')">
+            <input type="radio" id="cashOnDelivery" name="paymentMethod" value="Cash on Delivery" onclick="showPaymentDetails('cashOnDelivery')">
             <label for="cashOnDelivery">Cash on Delivery</label>
           </div>
         </div>
@@ -916,21 +1079,21 @@ footer::before {
             </div>
             <div class="form-group">
               <label for="cardName" class="form-label required-field">Name on Card</label>
-              <input type="text" id="cardName" class="form-control">
+              <input type="text" id="cardName" name="cardName" class="form-control">
             </div>
             <div class="form-group">
               <label for="cardNumber" class="form-label required-field">Card Number</label>
-              <input type="text" id="cardNumber" class="form-control" placeholder="XXXX XXXX XXXX XXXX">
+              <input type="text" id="cardNumber" name="cardNumber" class="form-control" placeholder="XXXX XXXX XXXX XXXX">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label for="expiryDate" class="form-label required-field">Expiry Date</label>
-              <input type="text" id="expiryDate" class="form-control" placeholder="MM/YY">
+              <input type="text" id="expiryDate" name="expiryDate" class="form-control" placeholder="MM/YY">
             </div>
             <div class="form-group">
               <label for="cvv" class="form-label required-field">CVV</label>
-              <input type="text" id="cvv" class="form-control" placeholder="123">
+              <input type="text" id="cvv" name="cvv" class="form-control" placeholder="123">
             </div>
           </div>
         </div>
@@ -940,7 +1103,7 @@ footer::before {
           <div class="form-row">
             <div class="form-group">
               <label for="mobileProvider" class="form-label required-field">Mobile Payment Provider</label>
-              <select id="mobileProvider" class="form-select">
+              <select id="mobileProvider" name="mobileProvider" class="form-select">
                 <option value="">Select Provider</option>
                 <option value="bkash">bKash</option>
                 <option value="nagad">Nagad</option>
@@ -949,7 +1112,7 @@ footer::before {
             </div>
             <div class="form-group">
               <label for="mobileNumber" class="form-label required-field">Mobile Number</label>
-              <input type="tel" id="mobileNumber" class="form-control" placeholder="01XXXXXXXXX">
+              <input type="tel" id="mobileNumber" name="mobileNumber" class="form-control" placeholder="01XXXXXXXXX">
             </div>
           </div>
         </div>
@@ -967,7 +1130,7 @@ footer::before {
         <h3><i class="fas fa-shipping-fast"></i> Delivery Options</h3>
         <div class="form-group">
           <label for="deliveryMethod" class="form-label required-field">Choose Delivery Method</label>
-          <select id="deliveryMethod" class="form-select" required>
+          <select id="deliveryMethod" name="deliveryMethod" class="form-select" required>
             <option value="">Select an option</option>
             <option value="standard" selected>Standard Delivery (2-3 business days) - 80 ৳</option>
             <option value="express">Express Delivery (1-2 business days) - 150 ৳</option>
@@ -976,7 +1139,7 @@ footer::before {
         </div>
         <div class="form-group">
           <label for="deliveryNotes" class="form-label">Delivery Instructions (Optional)</label>
-          <textarea id="deliveryNotes" class="form-control" rows="3" placeholder="Special instructions for delivery..."></textarea>
+          <textarea id="deliveryNotes" name="deliveryNotes" class="form-control" rows="3" placeholder="Special instructions for delivery..."></textarea>
         </div>
       </div>
 
@@ -985,23 +1148,23 @@ footer::before {
         <h3><i class="fas fa-info-circle"></i> Additional Information</h3>
         <div class="checkbox-group">
           <label>
-            <input type="checkbox" id="farmUpdates">
+            <input type="checkbox" id="farmUpdates" name="farmUpdates" value="1">
             Receive updates about our local farm events and activities
           </label>
           <label>
-            <input type="checkbox" id="termsAndConditions" required>
+            <input type="checkbox" id="termsAndConditions" name="termsAndConditions" required>
             I agree to the <a href="#">Terms and Conditions</a> and <a href="#">Privacy Policy</a>
           </label>
         </div>
         <div class="form-group">
           <label for="orderNotes" class="form-label">Order Notes (Optional)</label>
-          <textarea id="orderNotes" class="form-control" rows="3" placeholder="Any additional notes about your order..."></textarea>
+          <textarea id="orderNotes" name="orderNotes" class="form-control" rows="3" placeholder="Any additional notes about your order..."></textarea>
         </div>
       </div>
 
       <!-- Submit Button -->
       <div class="text-center">
-        <button type="submit" class="btn" id="submitOrder">Place Order</button>
+        <button type="submit" class="btn" id="submitOrder" <?php echo empty($cart) ? 'disabled' : ''; ?>>Place Order</button>
       </div>
     </form>
   </section>
@@ -1103,91 +1266,10 @@ footer::before {
     }
   }
 
-  // Shared function to update cart count
-  function updateCartCount() {
-    const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
-    const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
-    const cartCountElements = document.querySelectorAll('.cart-count');
-    
-    cartCountElements.forEach(element => {
-      element.innerText = totalItems;
-    });
-  }
-
-  function loadCartSummary() {
-    const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
-    const emptyCartMessage = document.getElementById('emptyCartMessage');
-    const cartItemsSummary = document.getElementById('cartItemsSummary');
-    const orderSummarySection = document.getElementById('orderSummarySection');
-    const cartItemsList = document.getElementById('cartItemsList');
-    const submitOrderButton = document.getElementById('submitOrder');
-    
-    // Update cart count in navigation
-    updateCartCount();
-    
-    if (cart.length === 0) {
-      // Show empty cart message
-      emptyCartMessage.style.display = 'block';
-      cartItemsSummary.style.display = 'none';
-      orderSummarySection.style.display = 'none';
-      submitOrderButton.disabled = true;
-      submitOrderButton.style.opacity = '0.6';
-      return;
-    }
-    
-    // Hide empty cart message
-    emptyCartMessage.style.display = 'none';
-    cartItemsSummary.style.display = 'block';
-    orderSummarySection.style.display = 'block';
-    submitOrderButton.disabled = false;
-    submitOrderButton.style.opacity = '1';
-    
-    // Clear previous items
-    cartItemsList.innerHTML = '';
-    
-    let subtotal = 0;
-    
-    // Add cart items to table
-    cart.forEach((item) => {
-      // Handle both string and number price formats
-      let priceNumber;
-      if (typeof item.price === 'string') {
-        priceNumber = parseFloat(item.price.replace(/[^\d.]/g, ''));
-      } else {
-        priceNumber = item.price;
-      }
-      
-      const itemSubtotal = priceNumber * item.quantity;
-      subtotal += itemSubtotal;
-      
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${item.crop || item.name}</td>
-        <td>${priceNumber} ৳</td>
-        <td>${item.vendor}</td>
-        <td>${item.quantity}</td>
-        <td>${itemSubtotal} ৳</td>
-      `;
-      cartItemsList.appendChild(row);
-    });
-    
-    // Update order summary
-    document.getElementById('subtotal').innerText = subtotal + ' ৳';
-    
-    // Update total based on delivery method
-    updateOrderTotal(subtotal);
-  }
-  
-  function updateOrderTotal(subtotal = null) {
-    if (subtotal === null) {
-      // Get subtotal from display if not provided
-      const subtotalText = document.getElementById('subtotal').innerText;
-      subtotal = parseFloat(subtotalText.replace(/[^\d.]/g, ''));
-    }
-    
-    // Get delivery fee based on selected method
-    const deliveryMethod = document.getElementById('deliveryMethod').value;
-    let deliveryFee = 100; // Default standard delivery
+  // Update order total when delivery method changes
+  document.getElementById('deliveryMethod').addEventListener('change', function() {
+    const deliveryMethod = this.value;
+    let deliveryFee = 80; // Default standard delivery
     
     switch (deliveryMethod) {
       case 'express':
@@ -1196,39 +1278,40 @@ footer::before {
       case 'pickup':
         deliveryFee = 0;
         break;
-      default:
-        deliveryFee = 80;
     }
     
     // Update delivery fee display
     document.getElementById('deliveryFee').innerText = deliveryFee + ' ৳';
     
     // Calculate and update total
+    const subtotalText = document.getElementById('subtotal').innerText;
+    const subtotal = parseFloat(subtotalText.replace(/[^\d.]/g, ''));
     const total = subtotal + deliveryFee;
     document.getElementById('total').innerText = total + ' ৳';
-  }
-  
-  document.addEventListener('DOMContentLoaded', function() {
-    // Load cart from localStorage and display in order form
-    loadCartSummary();
-    
-    // Make sure the initial payment method is shown correctly
-    showPaymentDetails('creditCard');
-    
-    // Set up delivery method change handler
-    document.getElementById('deliveryMethod').addEventListener('change', function() {
-      updateOrderTotal();
-    });
+  });
 
-    // Form validation and submission
-    document.getElementById('orderForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      // Simple validation
-      let isValid = true;
-      const requiredFields = this.querySelectorAll('[required]');
-      
-      requiredFields.forEach(field => {
+  // Form validation
+  document.getElementById('orderForm').addEventListener('submit', function(e) {
+    let isValid = true;
+    
+    // Validate required fields
+    const requiredFields = this.querySelectorAll('[required]');
+    requiredFields.forEach(field => {
+      if (!field.value.trim()) {
+        field.classList.add('input-validation-error');
+        isValid = false;
+      } else {
+        field.classList.remove('input-validation-error');
+      }
+    });
+    
+    // Validate payment method specific fields
+    const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked').value;
+    
+    if (selectedPayment === 'Credit Card') {
+      const cardFields = ['cardName', 'cardNumber', 'expiryDate', 'cvv'];
+      cardFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
         if (!field.value.trim()) {
           field.classList.add('input-validation-error');
           isValid = false;
@@ -1236,72 +1319,35 @@ footer::before {
           field.classList.remove('input-validation-error');
         }
       });
-      
-      // Additional validation for payment method fields
-      const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked').value;
-      
-      if (selectedPayment === 'creditCard') {
-        const cardFields = ['cardName', 'cardNumber', 'expiryDate', 'cvv'];
-        cardFields.forEach(fieldId => {
-          const field = document.getElementById(fieldId);
-          if (!field.value.trim()) {
-            field.classList.add('input-validation-error');
-            isValid = false;
-          }
-        });
-      } else if (selectedPayment === 'mobileMoney') {
-        const mobileFields = ['mobileProvider', 'mobileNumber'];
-        mobileFields.forEach(fieldId => {
-          const field = document.getElementById(fieldId);
-          if (!field.value.trim()) {
-            field.classList.add('input-validation-error');
-            isValid = false;
-          }
-        });
-      }
-      
-      if (isValid) {
-        // Generate random order ID
-        const orderId = 'FV' + Math.floor(10000 + Math.random() * 90000);
-        
-        alert('Thank you for your order! Your order has been placed successfully. Your order ID is: #' + orderId);
-        
-        // Clear cart
-        localStorage.setItem('farmvilleCart', JSON.stringify([]));
-        
-        // Redirect to order history page (in a real app)
-        setTimeout(() => {
-          window.location.href = 'order-history.html';
-        }, 1000);
-      } else {
-        alert('Please fill in all required fields correctly.');
-      }
-    });
-  });
+    } else if (selectedPayment === 'Mobile Money') {
+      const mobileFields = ['mobileProvider', 'mobileNumber'];
+      mobileFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (!field.value.trim()) {
+          field.classList.add('input-validation-error');
+          isValid = false;
+        } else {
+          field.classList.remove('input-validation-error');
+        }
+      });
+    }
+    
 
-  // Initialize mock cart data if none exists
-  if (!localStorage.getItem('farmvilleCart')) {
-    localStorage.setItem('farmvilleCart', JSON.stringify([
-      {
-        crop: "Organic Apples",
-        price: 4,
-        vendor: "FreshHarvest Ltd.",
-        quantity: 3
-      },
-      {
-        crop: "Farm Fresh Eggs (Dozen)",
-        price: 5,
-        vendor: "GoldenRoot Suppliers",
-        quantity: 2
-      },
-      {
-        crop: "Local Honey (16oz)",
-        price: 8.50,
-        vendor: "AgroStar Ltd.",
-        quantity: 1
-      }
-    ]));
-  }
+  
+    // Validate terms checkbox
+    const termsCheckbox = document.getElementById('termsAndConditions');
+    if (!termsCheckbox.checked) {
+      termsCheckbox.classList.add('input-validation-error');
+      isValid = false;
+    } else {
+      termsCheckbox.classList.remove('input-validation-error');
+    }
+    
+    if (!isValid) {
+      e.preventDefault();
+      alert('Please fill in all required fields correctly.');
+    }
+  });
 </script>
 </body>
 </html>

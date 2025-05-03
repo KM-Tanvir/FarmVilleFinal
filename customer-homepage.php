@@ -1,3 +1,45 @@
+<?php
+require_once 'config.php';
+
+// Database connection
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "farmville";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Get the first two products for the "Fresh Picks" section
+$sql = "SELECT product_id, product_name, product_type, current_price, stock_status, seasonality 
+        FROM product_t 
+        LIMIT 2";
+$result = $conn->query($sql);
+
+$freshPicks = [];
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+        $freshPicks[] = $row;
+    }
+}
+
+// Get all products for the chart
+$chartSql = "SELECT product_name, current_price, stock_status FROM product_t";
+$chartResult = $conn->query($chartSql);
+
+$chartData = [];
+if ($chartResult->num_rows > 0) {
+    while($row = $chartResult->fetch_assoc()) {
+        $chartData[] = $row;
+    }
+}
+
+$conn->close();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,6 +48,7 @@
   <title>FarmVille — Your Agri Market Partner</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <style>
 /* ===== GLOBAL STYLES ===== */
 :root {
@@ -313,22 +356,7 @@ body.sidebar-open .sidebar-toggle {
   border-radius: 3px;
 }
 
-
-
 /* ===== PRODUCT STYLES ===== */
-.product-card {
-  background-color: white;
-  border-radius: 12px;
-  padding: 25px;
-  margin-bottom: 25px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.03);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Updated Product Highlights Styles */
 .product-highlight-card {
   background: white;
   border-radius: 15px;
@@ -472,6 +500,17 @@ body.sidebar-open .sidebar-toggle {
   transform: translateX(3px);
 }
 
+/* Chart container styles */
+.chart-container {
+  margin-top: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  position: relative;
+  height: 400px;
+}
+
 /* Updated button styling to match existing buttons */
 .btn {
   background: linear-gradient(to right, var(--primary), var(--secondary));
@@ -513,108 +552,6 @@ body.sidebar-open .sidebar-toggle {
 .btn:hover::after {
   transform: translateX(100%);
 }
-
-@media (max-width: 768px) {
-  .product-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .highlight-product {
-    flex-direction: column;
-  }
-  
-  .product-image {
-    width: 100%;
-    height: 150px;
-  }
-}
-
-.product-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(44,141,173,0.03) 0%, rgba(31,64,142,0.03) 100%);
-  z-index: 0;
-}
-
-.product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
-
-.product-info {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 30px;
-  position: relative;
-  z-index: 1;
-}
-
-.product-details {
-  flex: 1;
-  min-width: 200px;
-}
-
-.product-details h3 {
-  margin-bottom: 15px;
-  color: var(--dark);
-  font-size: 1.3rem;
-  position: relative;
-  display: inline-block;
-}
-
-.product-details h3::after {
-  content: '';
-  position: absolute;
-  bottom: -5px;
-  left: 0;
-  width: 30px;
-  height: 2px;
-  background: var(--primary);
-}
-
-.in-season {
-  color: var(--success);
-  font-weight: 600;
-  background: rgba(40, 167, 69, 0.1);
-  padding: 3px 8px;
-  border-radius: 4px;
-  display: inline-block;
-}
-
-.off-season {
-  color: var(--danger);
-  font-weight: 600;
-  background: rgba(220, 53, 69, 0.1);
-  padding: 3px 8px;
-  border-radius: 4px;
-  display: inline-block;
-}
-
-.in-stock {
-  color: var(--success);
-  font-weight: 500;
-}
-
-.low-stock {
-  color: var(--warning);
-  font-weight: 500;
-}
-
-.almost-gone {
-  color: #ff6b35;
-  font-weight: 500;
-}
-
-.stock-out {
-  color: var(--danger);
-  font-weight: 600;
-}
-
 
 /* ===== TABLE STYLES ===== */
 .seasonality-table {
@@ -690,46 +627,6 @@ body.sidebar-open .sidebar-toggle {
   left: 0;
   color: var(--primary);
   font-weight: bold;
-}
-
-/* ===== BUTTON STYLES ===== */
-.btn {
-  background: linear-gradient(to right, var(--primary), var(--secondary));
-  color: white;
-  padding: 12px 25px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 500;
-  display: inline-block;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border: none;
-  font-size: 16px;
-  margin-top: 20px;
-  box-shadow: 0 4px 15px rgba(44, 141, 173, 0.3);
-  position: relative;
-  overflow: hidden;
-}
-
-.btn::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transform: translateX(-100%);
-  transition: transform 0.5s ease;
-}
-
-.btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 7px 20px rgba(44, 141, 173, 0.4);
-}
-
-.btn:hover::after {
-  transform: translateX(100%);
 }
 
 /* ===== FOOTER STYLES ===== */
@@ -851,11 +748,6 @@ section, button, a.btn, form {
     font-size: 2rem;
   }
   
-  .product-info {
-    flex-direction: column;
-    gap: 20px;
-  }
-  
   body.sidebar-open .main-content {
     margin-left: 0;
   }
@@ -903,10 +795,13 @@ section, button, a.btn, form {
     padding: 20px;
   }
   
-  .floating-stats {
-    bottom: 20px;
-    right: 20px;
-    width: 250px;
+  .highlight-product {
+    flex-direction: column;
+  }
+  
+  .product-image {
+    width: 100%;
+    height: 150px;
   }
 }
 
@@ -923,12 +818,6 @@ section, button, a.btn, form {
     padding: 10px 20px;
     font-size: 15px;
   }
-  
-  .floating-stats {
-    width: 90%;
-    right: 5%;
-    bottom: 15px;
-  }
 }
   </style>
 </head>
@@ -941,15 +830,15 @@ section, button, a.btn, form {
   
   <div class="header-right">
     <div class="cart-icon">
-      <a href="/customer-order-history.html" title="Shopping Cart">
+      <a href="customer-order-history.php" title="Shopping Cart">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
           <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
         </svg>
-        <span class="cart-count">0</span>
+        <span class="cart-count" id="cartCount">0</span>
       </a>
     </div>
     
-    <a href="/customer-info.html" title="My Account">
+    <a href="customer-info.php" title="My Account">
       <img src="account-icon.png" alt="My Account" class="account-icon">
     </a>
   </div>
@@ -957,12 +846,11 @@ section, button, a.btn, form {
 
 <!-- Sidebar Navigation -->
 <div class="sidebar" id="sidebar">
-  <a href="customer-homepage.html" class="active"><i class="fas fa-home"></i> Home</a>
-  <a href="customer-product-catalog.html"><i class="fas fa-shopping-basket"></i> Browse Products</a>
-  <a href="customer-market-insights.html"><i class="fas fa-chart-line"></i> Market Insights</a>
-  <a href="customer-order-history.html"><i class="fas fa-history"></i> My Orders</a>
+  <a href="customer-homepage.php" class="active"><i class="fas fa-home"></i> Home</a>
+  <a href="customer-product-catalog.php"><i class="fas fa-shopping-basket"></i> Browse Products</a>
+  <a href="customer-order-history.php"><i class="fas fa-history"></i> My Orders</a>
   <a href="customer-feedback.html"><i class="fas fa-comment-alt"></i> Feedbacks</a>
-  <a href="Login_Page.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  <a href="Login_Page.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </div>
 
 <!-- Sidebar Toggle Button -->
@@ -983,60 +871,41 @@ section, button, a.btn, form {
     <h2><i class="fas fa-spa" style="color: var(--success);"></i> Fresh Picks of the Season</h2>
     <div class="product-highlight-card">
       <div class="product-grid">
+        <?php foreach ($freshPicks as $index => $product): ?>
         <div class="highlight-product">
-          <div class="product-badge in-season-badge">Seasonal Favorite</div>
+          <div class="product-badge <?php echo $product['seasonality'] == 'In Season' ? 'in-season-badge' : 'limited-badge'; ?>">
+            <?php echo $product['seasonality'] == 'In Season' ? 'Seasonal Favorite' : 'Limited Stock'; ?>
+          </div>
           <div class="product-content">
-            <h3>Potatoes</h3>
+            <h3><?php echo htmlspecialchars($product['product_name']); ?></h3>
             <div class="product-meta">
-              <span class="price-tag">৳75/kg</span>
-              <span class="stock-status in-stock">Available</span>
+              <span class="price-tag">৳<?php echo htmlspecialchars($product['current_price']); ?>/kg</span>
+              <span class="stock-status <?php echo $product['stock_status'] == 'In Stock' ? 'in-stock' : 'low-stock'; ?>">
+                <?php echo htmlspecialchars($product['stock_status']); ?>
+              </span>
             </div>
             <div class="product-description">
-              <p>Freshly harvested premium quality potatoes with excellent shelf life</p>
+              <p>Freshly harvested premium quality <?php echo htmlspecialchars(strtolower($product['product_name'])); ?> with excellent shelf life</p>
             </div>
             <div class="product-actions">
-              <a href="customer-product-catalog.html#potatoes" class="view-details">View Details <i class="fas fa-chevron-right"></i></a>
+              <a href="customer-product-catalog.php#<?php echo htmlspecialchars(strtolower(str_replace(' ', '-', $product['product_name']))); ?>" class="view-details">View Details <i class="fas fa-chevron-right"></i></a>
             </div>
           </div>
-          <div class="product-image" style="background-image: url('potatoes.jpg');"></div>
+          <div class="product-image" style="background-image: url('<?php echo htmlspecialchars(strtolower(str_replace(' ', '-', $product['product_name']))); ?>.jpg');"></div>
         </div>
-        
-        <div class="highlight-product">
-          <div class="product-badge limited-badge">Limited Stock</div>
-          <div class="product-content">
-            <h3>Fine Rice</h3>
-            <div class="product-meta">
-              <span class="price-tag">৳67/kg</span>
-              <span class="stock-status low-stock">Last Few</span>
-            </div>
-            <div class="product-description">
-              <p>Aromatic long grain rice with premium texture and flavor</p>
-            </div>
-            <div class="product-actions">
-              <a href="customer-product-catalog.html#rice" class="view-details">View Details <i class="fas fa-chevron-right"></i></a>
-            </div>
-          </div>
-          <div class="product-image" style="background-image: url('rice.jpg');"></div>
-        </div>
+        <?php endforeach; ?>
       </div>
-      <a href="customer-product-catalog.html" class="btn">
+      
+      <!-- Chart container -->
+      <div class="chart-container">
+        <canvas id="priceChart"></canvas>
+      </div>
+      
+      <a href="customer-product-catalog.php" class="btn">
         Explore All Products <i class="fas fa-arrow-right"></i>
       </a>
     </div>
   </section>
-
-  <section id="market-trends" class="content-box">
-    <h2><i class="fas fa-chart-line"></i> Market Insights</h2>
-    <div class="trend-chart">
-      <p><strong>Maize, Rice, Potato (7-Day Average Price)</strong></p>
-      <div style="height: 200px; background: rgba(44,141,173,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 20px 0;">
-        <p style="color: var(--dark);">Interactive chart would appear here with real-time data</p>
-      </div>
-      <p class="note">Updated: Real-time data from vendors & farmers</p>
-      <a href="customer-market-insights.html" class="btn">Explore Full Market Trends <i class="fas fa-arrow-right"></i></a>
-    </div>
-  </section>
-
 
   <section id="crop-seasonality" class="content-box">
     <h2><i class="fas fa-calendar-alt"></i> Crop Seasonality Guide</h2>
@@ -1100,7 +969,6 @@ section, button, a.btn, form {
     <h2><i class="fas fa-lightbulb"></i> Personalized Recommendations</h2>
     
     <div class="recommendation-card">
-      <h3>Based on your purchase history</h3>
       <p>You frequently buy Potatoes and Rice. Consider adding these complementary products:</p>
       <ul>
         <li>🌾 Buy <strong>Wheat</strong> now — peak harvest means better pricing & bulk deals available.</li>
@@ -1201,7 +1069,163 @@ section, button, a.btn, form {
   // Call this function when each page loads
   document.addEventListener('DOMContentLoaded', function() {
     updateCartCount();
+    
+    // Initialize the price chart
+    initPriceChart();
   });
+
+  // Initialize the price chart with data from PHP
+  function initPriceChart() {
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    
+    // Prepare chart data from PHP
+    const chartLabels = [];
+    const chartData = [];
+    const stockStatuses = [];
+    
+    <?php foreach ($chartData as $product): ?>
+      chartLabels.push('<?php echo htmlspecialchars($product['product_name']); ?>');
+      chartData.push(<?php echo htmlspecialchars($product['current_price']); ?>);
+      stockStatuses.push('<?php echo htmlspecialchars($product['stock_status']); ?>');
+    <?php endforeach; ?>
+    
+    // Generate dynamic colors based on stock status
+    const backgroundColors = stockStatuses.map(status => {
+      if (status === 'In Stock') return 'rgba(40, 167, 69, 0.7)';
+      if (status === 'Low Stock') return 'rgba(255, 193, 7, 0.7)';
+      if (status === 'Almost Gone') return 'rgba(220, 53, 69, 0.7)';
+      return 'rgba(108, 117, 125, 0.7)';
+    });
+    
+    const borderColors = stockStatuses.map(status => {
+      if (status === 'In Stock') return 'rgba(40, 167, 69, 1)';
+      if (status === 'Low Stock') return 'rgba(255, 193, 7, 1)';
+      if (status === 'Almost Gone') return 'rgba(220, 53, 69, 1)';
+      return 'rgba(108, 117, 125, 1)';
+    });
+    
+    // Create the chart
+    window.priceChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: chartLabels,
+        datasets: [{
+          label: 'Price per kg (৳)',
+          data: chartData,
+          backgroundColor: backgroundColors,
+          borderColor: borderColors,
+          borderWidth: 2,
+          borderRadius: 6,
+          borderSkipped: false,
+          hoverBackgroundColor: backgroundColors.map(color => color.replace('0.7', '0.9')),
+          hoverBorderWidth: 3,
+          categoryPercentage: 0.8,
+          barPercentage: 0.7
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Product Price Comparison',
+            font: {
+              size: 18,
+              weight: 'bold'
+            },
+            color: '#1f408e',
+            padding: {
+              top: 10,
+              bottom: 20
+            }
+          },
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              usePointStyle: true,
+              pointStyle: 'rectRounded',
+              padding: 20
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const index = context.dataIndex;
+                return [
+                  `Price: ৳${context.raw.toFixed(2)}`,
+                  `Stock: ${stockStatuses[index] || 'N/A'}`
+                ];
+              }
+            },
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            titleFont: {
+              size: 14,
+              weight: 'bold'
+            },
+            bodyFont: {
+              size: 12
+            },
+            padding: 12,
+            cornerRadius: 8,
+            displayColors: false
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '৳' + value;
+              },
+              font: {
+                weight: 'bold'
+              }
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)'
+            }
+          },
+          y: {
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)'
+            },
+            ticks: {
+              font: {
+                size: 12,
+                weight: 'bold'
+              },
+              autoSkip: false,
+              padding: 10
+            },
+            afterFit: function(axis) {
+              axis.paddingTop = 20;
+              axis.paddingBottom = 20;
+            }
+          }
+        },
+        onClick: function(evt, elements) {
+          if (elements.length > 0) {
+            const index = elements[0].index;
+            const productName = this.data.labels[index];
+            
+            // Scroll to the product in the catalog page
+            window.location.href = `customer-product-catalog.php#${productName.toLowerCase().replace(/ /g, '-')}`;
+          }
+        },
+        layout: {
+          padding: {
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: 20
+          }
+        }
+      }
+    });
+  }
 </script>
 
 </body>

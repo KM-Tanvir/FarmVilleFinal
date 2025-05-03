@@ -1,3 +1,101 @@
+<?php
+require_once 'config.php';
+session_start();
+
+// Initialize cart in session if not exists
+if (!isset($_SESSION['cart'])) {
+    $_SESSION['cart'] = [];
+}
+
+// Synchronize localStorage cart with session cart
+if (!empty($_POST['cart_data'])) {
+    $cartData = json_decode($_POST['cart_data'], true);
+    if (is_array($cartData)) {
+        $_SESSION['cart'] = $cartData;
+    }
+}
+
+// Get customer ID from session (simulated for demo)
+$customerId = $_SESSION['customer_id'] ?? 1; // Default customer for demo
+
+// Get customer orders with proper price data
+$sql = "SELECT o.order_id, o.order_date, o.total_amount, o.delivery_fee, o.payment_method, 
+               o.delivery_address, o.order_status
+        FROM order_t o
+        WHERE o.CustomerID = ?
+        ORDER BY o.order_date DESC";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $customerId);
+$stmt->execute();
+$result = $stmt->get_result();
+$orders = $result->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+// Handle cart actions
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    $action = $_POST['action'];
+    
+    switch ($action) {
+        case 'update_quantity':
+            $index = (int)$_POST['index'];
+            $change = isset($_POST['change']) ? (float)$_POST['change'] : 0;
+            $quantity = isset($_POST['quantity']) ? (float)$_POST['quantity'] : 0;
+            
+            if (isset($_SESSION['cart'][$index])) {
+                if ($quantity > 0) {
+                    $_SESSION['cart'][$index]['quantity'] = $quantity;
+                } else {
+                    $_SESSION['cart'][$index]['quantity'] += $change;
+                    if ($_SESSION['cart'][$index]['quantity'] < 1) {
+                        $_SESSION['cart'][$index]['quantity'] = 1;
+                    }
+                }
+            }
+            break;
+            
+        case 'remove_item':
+            $index = (int)$_POST['index'];
+            if (isset($_SESSION['cart'][$index])) {
+                array_splice($_SESSION['cart'], $index, 1);
+            }
+            break;
+            
+        case 'clear_cart':
+            $_SESSION['cart'] = [];
+            break;
+            
+        case 'sync_cart':
+            if (!empty($_POST['cart_data'])) {
+                $cartData = json_decode($_POST['cart_data'], true);
+                if (is_array($cartData)) {
+                    $_SESSION['cart'] = $cartData;
+                }
+            }
+            break;
+    }
+    
+    // Return JSON response for AJAX calls
+    header('Content-Type: application/json');
+    echo json_encode(['success' => true, 'cart' => $_SESSION['cart']]);
+    exit();
+}
+
+// Calculate cart totals with proper type checking
+$cartCount = array_reduce($_SESSION['cart'], function($carry, $item) {
+    return $carry + (isset($item['quantity']) ? (float)$item['quantity'] : 0);
+}, 0);
+
+$subtotal = array_reduce($_SESSION['cart'], function($carry, $item) {
+    $price = isset($item['price']) ? (float)$item['price'] : 0;
+    $quantity = isset($item['quantity']) ? (float)$item['quantity'] : 0;
+    return $carry + ($price * $quantity);
+}, 0);
+
+$deliveryFee = 80; // Default delivery fee
+$total = $subtotal + $deliveryFee;
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -618,7 +716,6 @@
       color: white;
       font-size: 1.1rem;
       position: relative;
-      display: inline-block;
     }
 
     .footer-section h4::after {
@@ -686,8 +783,49 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     section, button, a.btn, form {
       animation: fadeIn 0.8s ease-out forwards;
+    }
+
+    /* ===== ORDER HISTORY SPECIFIC STYLES ===== */
+    #orderHistoryContainer {
+      animation: fadeIn 0.8s ease-out forwards;
+    }
+
+    .loading-message {
+      text-align: center;
+      padding: 40px;
+      color: var(--dark);
+      font-size: 1.1rem;
+    }
+
+    .loading-message i {
+      font-size: 2rem;
+      margin-bottom: 15px;
+      color: var(--primary);
+      display: block;
+    }
+
+    .error-message {
+      text-align: center;
+      padding: 40px;
+      color: var(--danger);
+      font-size: 1.1rem;
+    }
+
+    .error-message i {
+      font-size: 2rem;
+      margin-bottom: 15px;
+      display: block;
+    }
+
+    .vendor-card {
+      animation: slideIn 0.5s ease-out forwards;
     }
 
     /* ===== RESPONSIVE STYLES ===== */
@@ -800,15 +938,15 @@
   
   <div class="header-right">
     <div class="cart-icon">
-      <a href="/customer-order-history.html" title="Shopping Cart">
+      <a href="customer-order-history.php#cart" title="Shopping Cart">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
           <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
         </svg>
-        <span class="cart-count">0</span>
+        <span class="cart-count" id="cartCount"><?php echo $cartCount; ?></span>
       </a>
     </div>
     
-    <a href="/customer-info.html" title="My Account">
+    <a href="customer-info.php" title="My Account">
       <img src="account-icon.png" alt="My Account" class="account-icon">
     </a>
   </div>
@@ -816,11 +954,11 @@
 
 <!-- Sidebar Navigation -->
 <div class="sidebar" id="sidebar">
-  <a href="customer-homepage.html"><i class="fas fa-home"></i> Home</a>
-  <a href="customer-product-catalog.html"><i class="fas fa-shopping-basket"></i> Browse Products</a>
-  <a href="customer-order-history.html" class="active"><i class="fas fa-history"></i> My Orders</a>
+  <a href="customer-homepage.php"><i class="fas fa-home"></i> Home</a>
+  <a href="customer-product-catalog.php"><i class="fas fa-shopping-basket"></i> Browse Products</a>
+  <a href="customer-order-history.php" class="active"><i class="fas fa-history"></i> My Orders</a>
   <a href="customer-feedback.html"><i class="fas fa-comment-alt"></i> Feedbacks</a>
-  <a href="Login_Page.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  <a href="Login_Page.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </div>
 
 <!-- Sidebar Toggle Button -->
@@ -830,148 +968,136 @@
 
 <!-- Main Content Wrapper -->
 <div class="main-content">
-  <!-- Cart Section -->
-  <section id="cart" class="content-box">
+<!-- Cart Section -->
+<section id="cart" class="content-box">
     <h2><i class="fas fa-shopping-cart"></i> My Cart</h2>
     <div id="cartItems">
-      <!-- Cart items will be dynamically added here -->
+        <?php if (!empty($_SESSION['cart'])): ?>
+            <table class="cart-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Subtotal</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($_SESSION['cart'] as $index => $item): 
+                        // Get the numeric price value (remove currency symbol if present)
+                        $price = isset($item['price']) ? (float)preg_replace('/[^0-9.]/', '', $item['price']) : 0;
+                        $quantity = isset($item['quantity']) ? (float)$item['quantity'] : 0;
+                        $itemSubtotal = $price * $quantity;
+                    ?>
+                        <tr>
+                            <td data-label="Product"><?php echo htmlspecialchars($item['crop']); ?></td>
+                            <td data-label="Price"><?php echo number_format($price, 2); ?> ৳</td>
+                            <td data-label="Quantity">
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="updateQuantity(<?php echo $index; ?>, -1)">-</button>
+                                    <input type="number" min="1" value="<?php echo $quantity; ?>" 
+                                           onchange="updateQuantity(<?php echo $index; ?>, this.value)">
+                                    <button class="quantity-btn" onclick="updateQuantity(<?php echo $index; ?>, 1)">+</button>
+                                </div>
+                            </td>
+                            <td data-label="Subtotal"><?php echo number_format($itemSubtotal, 2); ?> ৳</td>
+                            <td data-label="Action">
+                                <button class="remove-btn" onclick="removeFromCart(<?php echo $index; ?>)">
+                                    <i class="fas fa-trash-alt"></i> Remove
+                                </button>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <div id="emptyCartMessage" class="text-center">
+                <p>Your cart is empty. <a href="customer-product-catalog.php">Browse products</a> to add items to your cart.</p>
+            </div>
+        <?php endif; ?>
     </div>
     
-    <div id="emptyCartMessage" class="text-center" style="display: none;">
-      <p>Your cart is empty. <a href="customer-product-catalog.html">Browse products</a> to add items to your cart.</p>
-    </div>
-    
-    <div id="cartSummary" class="cart-summary">
-      <p><strong>Total Items:</strong> <span id="totalItems">0</span></p>
-      <p><strong>Subtotal:</strong> <span id="subtotal">0 ৳</span></p>
-      <p><strong>Delivery Fee:</strong> <span id="deliveryFee">80 ৳</span></p>
-      <p><strong>Total:</strong> <span id="total">0 ৳</span></p>
-    </div>
-    
-    <div class="button-container">
-      <button id="clearCart" class="btn"><i class="fas fa-trash-alt"></i> Clear Cart</button>
-      <button id="checkoutBtn" class="btn"><i class="fas fa-credit-card"></i> Proceed to Checkout</button>
-    </div>
-  </section>
+    <?php if (!empty($_SESSION['cart'])): ?>
+        <div id="cartSummary" class="cart-summary">
+            <p><strong>Total Items:</strong> <span id="totalItems"><?php echo $cartCount; ?></span></p>
+            <p><strong>Subtotal:</strong> <span id="subtotal"><?php echo number_format($subtotal, 2); ?> ৳</span></p>
+            <p><strong>Delivery Fee:</strong> <span id="deliveryFee"><?php echo number_format($deliveryFee, 2); ?> ৳</span></p>
+            <p><strong>Total:</strong> <span id="total"><?php echo number_format($total, 2); ?> ৳</span></p>
+        </div>
+        
+        <div class="button-container">
+            <button id="clearCart" class="btn"><i class="fas fa-trash-alt"></i> Clear Cart</button>
+            <button id="checkoutBtn" class="btn"><i class="fas fa-credit-card"></i> Proceed to Checkout</button>
+        </div>
+    <?php endif; ?>
+</section>
 
   <section class="content-box">
     <h2><i class="fas fa-history"></i> Order History</h2>
-
-    <!-- Order 1 -->
-    <div class="vendor-card">
-      <div class="order-header">
-        <h3>Order ID: #FV12345</h3>
-        <p><strong>Date:</strong> April 16, 2025</p>
-        <span class="certified status-delivered"><i class="fas fa-check-circle"></i> Delivered</span>
-      </div>
-      <div class="product-grid">
-        <div class="product-card">
-          <div class="product-info">
-            <div class="product-details">
-              <h3>Onion</h3>
-              <p><strong>Quantity:</strong> 3 kg</p>
-              <p><strong>Price:</strong> 50 ৳/kg</p>
+    <div id="orderHistoryContainer">
+      <?php if (empty($orders)): ?>
+        <p>You have no orders yet. <a href="customer-product-catalog.php">Browse products</a> to place your first order.</p>
+      <?php else: ?>
+        <?php foreach ($orders as $order): ?>
+          <div class="vendor-card">
+            <div class="order-header">
+              <h3>Order ID: #FV<?php echo str_pad($order['order_id'], 5, '0', STR_PAD_LEFT); ?></h3>
+              <p><strong>Date:</strong> <?php echo date('F j, Y', strtotime($order['order_date'])); ?></p>
+              <span class="certified status-<?php echo strtolower($order['order_status']); ?>">
+                <i class="fas fa-<?php 
+                  echo $order['order_status'] == 'Delivered' ? 'check-circle' : 
+                  ($order['order_status'] == 'Pending' ? 'clock' : 'times-circle'); 
+                ?>"></i> 
+                <?php echo $order['order_status']; ?>
+              </span>
+            </div>
+            
+            <div class="product-grid">
+              <?php 
+              // Get order items details with proper price data
+              $itemsSql = "SELECT p.product_name, p.product_id, oi.qty_kg, oi.price_per_kg 
+                           FROM order_items oi
+                           JOIN product_t p ON oi.product_id = p.product_id
+                           WHERE oi.order_id = ?";
+              $itemsStmt = $conn->prepare($itemsSql);
+              $itemsStmt->bind_param("i", $order['order_id']);
+              $itemsStmt->execute();
+              $itemsResult = $itemsStmt->get_result();
+              $items = $itemsResult->fetch_all(MYSQLI_ASSOC);
+              $itemsStmt->close();
+              
+              foreach ($items as $item): 
+                  $itemSubtotal = $item['qty_kg'] * $item['price_per_kg'];
+              ?>
+                <div class="product-card">
+                  <div class="product-info">
+                    <div class="product-details">
+                      <h3><?php echo htmlspecialchars($item['product_name']); ?></h3>
+                      <p><strong>Product ID:</strong> <?php echo $item['product_id']; ?></p>
+                      <p><strong>Quantity:</strong> <?php echo number_format($item['qty_kg'], 2); ?> kg</p>
+                      <p><strong>Price:</strong> <?php echo number_format($item['price_per_kg'], 2); ?> ৳/kg</p>
+                      <p><strong>Subtotal:</strong> <?php echo number_format($itemSubtotal, 2); ?> ৳</p>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+            
+            <div class="order-meta">
+              <p><i class="fas fa-money-bill-wave"></i> <strong>Total Amount:</strong> <?php echo number_format($order['total_amount'], 2); ?> ৳ (incl. delivery)</p>
+              <p><i class="fas fa-map-marker-alt"></i> <strong>Delivery Address:</strong> <?php echo htmlspecialchars($order['delivery_address']); ?></p>
+              <p><i class="fas fa-credit-card"></i> <strong>Payment:</strong> <?php echo htmlspecialchars($order['payment_method']); ?></p>
+              <p><i class="fas fa-clock"></i> <strong>Order Date:</strong> <?php echo date('F j, Y', strtotime($order['order_date'])); ?></p>
+            </div>
+            
+            <div class="button-container">
+              <a href="customer-product-catalog.php" class="btn"><i class="fas fa-redo"></i> Reorder</a>
+              <a href="customer-feedback.php?order_id=<?php echo $order['order_id']; ?>" class="btn"><i class="fas fa-star"></i> Leave Review</a>
             </div>
           </div>
-        </div>
-        <div class="product-card">
-          <div class="product-info">
-            <div class="product-details">
-              <h3>Potato</h3>
-              <p><strong>Quantity:</strong> 5 kg</p>
-              <p><strong>Price:</strong> 30 ৳/kg</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="order-meta">
-        <p><i class="fas fa-money-bill-wave"></i> <strong>Total Amount:</strong> 290.00 ৳ (incl. delivery & taxes)</p>
-        <p><i class="fas fa-map-marker-alt"></i> <strong>Delivery Address:</strong> 123 Mirpur Road, Dhaka</p>
-        <p><i class="fas fa-credit-card"></i> <strong>Payment:</strong> Mobile Money</p>
-        <p><i class="fas fa-calendar-alt"></i> <strong>Harvest Date:</strong> April 14, 2025</p>
-        <p><i class="fas fa-clock"></i> <strong>Delivery Time:</strong> Delivered within 24 hours</p>
-      </div>
-      <div class="button-container">
-        <a href="#" class="btn"><i class="fas fa-file-invoice"></i> Download Invoice</a>
-        <a href="#" class="btn"><i class="fas fa-headset"></i> Contact Support</a>
-        <a href="customer-product-catalog.html" class="btn"><i class="fas fa-redo"></i> Reorder</a>
-        <a href="customer-feedback.html" class="btn"><i class="fas fa-star"></i> Leave Review</a>
-      </div>
-    </div>
-
-    <!-- Order 2 -->
-    <div class="vendor-card">
-      <div class="order-header">
-        <h3>Order ID: #FV12346</h3>
-        <p><strong>Date:</strong> April 14, 2025</p>
-        <span class="certified status-pending"><i class="fas fa-clock"></i> In Progress</span>
-      </div>
-      <div class="product-grid">
-        <div class="product-card">
-          <div class="product-info">
-            <div class="product-details">
-              <h3>Garlic</h3>
-              <p><strong>Quantity:</strong> 50 kg</p>
-              <p><strong>Price:</strong> 120 ৳/kg</p>
-            </div>
-          </div>
-        </div>
-        <div class="product-card">
-          <div class="product-info">
-            <div class="product-details">
-              <h3>Onion</h3>
-              <p><strong>Quantity:</strong> 40 kg</p>
-              <p><strong>Price:</strong> 50 ৳/kg</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="order-meta">
-        <p><i class="fas fa-money-bill-wave"></i> <strong>Total Amount:</strong> 13,600.00 ৳ (incl. delivery & taxes)</p>
-        <p><i class="fas fa-map-marker-alt"></i> <strong>Delivery Address:</strong> 456 Love Road, Chittagong</p>
-        <p><i class="fas fa-credit-card"></i> <strong>Payment:</strong> Visa</p>
-        <p><i class="fas fa-calendar-alt"></i> <strong>Harvest Date:</strong> April 12, 2025</p>
-        <p><i class="fas fa-clock"></i> <strong>Delivery Time:</strong> 2-3 Days</p>
-      </div>
-      <div class="button-container">
-        <a href="#" class="btn"><i class="fas fa-file-invoice"></i> Download Invoice</a>
-        <a href="#" class="btn"><i class="fas fa-headset"></i> Contact Support</a>
-        <a href="customer-product-catalog.html" class="btn"><i class="fas fa-redo"></i> Reorder</a>
-        <a href="customer-feedback.html" class="btn"><i class="fas fa-star"></i> Leave Review</a>
-      </div>
-    </div>
-
-    <!-- Order 3 -->
-    <div class="vendor-card">
-      <div class="order-header">
-        <h3>Order ID: #FV12347</h3>
-        <p><strong>Date:</strong> April 10, 2025</p>
-        <span class="certified status-cancelled"><i class="fas fa-times-circle"></i> Cancelled</span>
-      </div>
-      <div class="product-grid">
-        <div class="product-card">
-          <div class="product-info">
-            <div class="product-details">
-              <h3>Fine Rice</h3>
-              <p><strong>Quantity:</strong> 1000 kg</p>
-              <p><strong>Price:</strong> 67 ৳/kg</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="order-meta">
-        <p><i class="fas fa-money-bill-wave"></i> <strong>Total Amount:</strong> 67,600.00 ৳ (incl. delivery & taxes)</p>
-        <p><i class="fas fa-map-marker-alt"></i> <strong>Delivery Address:</strong> 789 Chowdhury Para, Naoga</p>
-        <p><i class="fas fa-money-bill"></i> <strong>Payment:</strong> Cash on Delivery</p>
-        <p><i class="fas fa-calendar-alt"></i> <strong>Harvest Date:</strong> April 8, 2025</p>
-        <p><i class="fas fa-clock"></i> <strong>Delivery Time:</strong> N/A</p>
-      </div>
-      <div class="button-container">
-        <a href="#" class="btn"><i class="fas fa-file-invoice"></i> Download Invoice</a>
-        <a href="#" class="btn"><i class="fas fa-headset"></i> Contact Support</a>
-        <a href="customer-product-catalog.html" class="btn"><i class="fas fa-redo"></i> Reorder</a>
-        <a href="customer-feedback.html" class="btn"><i class="fas fa-star"></i> Leave Review</a>
-      </div>
+        <?php endforeach; ?>
+      <?php endif; ?>
     </div>
   </section>
 </div>
@@ -1008,7 +1134,126 @@
   </div>
 </footer>
 
+
 <script>
+  // Function to get cart from localStorage
+  function getLocalStorageCart() {
+    const cart = localStorage.getItem('farmvilleCart');
+    return cart ? JSON.parse(cart) : [];
+  }
+
+  // Function to sync localStorage cart with server session
+  function syncCartWithServer() {
+    const localStorageCart = getLocalStorageCart();
+    if (localStorageCart.length > 0) {
+      const formData = new FormData();
+      formData.append('action', 'sync_cart');
+      formData.append('cart_data', JSON.stringify(localStorageCart));
+      
+      fetch('customer-order-history.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        }
+      });
+    }
+  }
+
+  // Sync cart on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    syncCartWithServer();
+    
+    // Update cart count from session (after potential sync)
+    const cartCount = <?php echo (int)$cartCount; ?>;
+    document.getElementById('cartCount').innerText = cartCount;
+  });
+
+  // Cart functionality
+  function updateQuantity(index, change) {
+      const formData = new FormData();
+      formData.append('action', 'update_quantity');
+      formData.append('index', index);
+      
+      if (typeof change === 'number') {
+          formData.append('change', change);
+      } else {
+          formData.append('quantity', parseFloat(change));
+      }
+      
+      fetch('customer-order-history.php', {
+          method: 'POST',
+          body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              // Update localStorage as well
+              const cart = getLocalStorageCart();
+              if (cart[index]) {
+                  if (typeof change === 'number') {
+                      cart[index].quantity = parseFloat(cart[index].quantity) + change;
+                      if (cart[index].quantity < 1) cart[index].quantity = 1;
+                  } else {
+                      cart[index].quantity = parseFloat(change);
+                  }
+                  localStorage.setItem('farmvilleCart', JSON.stringify(cart));
+              }
+              location.reload();
+          }
+      });
+  }
+  
+  function removeFromCart(index) {
+      if (confirm('Are you sure you want to remove this item?')) {
+          const formData = new FormData();
+          formData.append('action', 'remove_item');
+          formData.append('index', index);
+          
+          fetch('customer-order-history.php', {
+              method: 'POST',
+              body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  // Update localStorage as well
+                  const cart = getLocalStorageCart();
+                  cart.splice(index, 1);
+                  localStorage.setItem('farmvilleCart', JSON.stringify(cart));
+                  location.reload();
+              }
+          });
+      }
+  }
+  
+  document.getElementById('clearCart').addEventListener('click', function() {
+      if (confirm('Are you sure you want to clear your cart?')) {
+          const formData = new FormData();
+          formData.append('action', 'clear_cart');
+          
+          fetch('customer-order-history.php', {
+              method: 'POST',
+              body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  // Clear localStorage as well
+                  localStorage.removeItem('farmvilleCart');
+                  location.reload();
+              }
+          });
+      }
+  });
+  
+  document.getElementById('checkoutBtn').addEventListener('click', function() {
+      window.location.href = 'customer-checkout.php';
+  });
+
   // Sidebar functionality
   const sidebar = document.getElementById('sidebar');
   const sidebarToggle = document.getElementById('sidebarToggle');
@@ -1046,166 +1291,9 @@
   sidebarToggle.addEventListener('click', () => {
     body.classList.toggle('sidebar-open');
   });
-
-  // Cart functionality
-  document.addEventListener('DOMContentLoaded', function() {
-    // Load cart from localStorage
-    loadCart();
-    
-    // Setup event listeners
-    document.getElementById('clearCart').addEventListener('click', clearCart);
-    
-    // Get the checkout button and add event listener
-    const checkoutBtn = document.getElementById('checkoutBtn');
-    if (checkoutBtn) {
-      checkoutBtn.addEventListener('click', proceedToCheckout);
-    }
-  });
-  
-  function loadCart() {
-    const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
-    const cartItems = document.getElementById('cartItems');
-    const emptyCartMessage = document.getElementById('emptyCartMessage');
-    const cartSummary = document.getElementById('cartSummary');
-    const clearCartBtn = document.getElementById('clearCart');
-    const checkoutBtn = document.getElementById('checkoutBtn');
-    
-    // Update cart count
-    document.querySelector('.cart-count').innerText = cart.reduce((total, item) => total + item.quantity, 0);
-    
-    // Clear previous items
-    cartItems.innerHTML = '';
-    
-    if (cart.length === 0) {
-      emptyCartMessage.style.display = 'block';
-      cartSummary.style.display = 'none';
-      clearCartBtn.style.display = 'none';
-      checkoutBtn.style.display = 'none';
-      return;
-    }
-    
-    emptyCartMessage.style.display = 'none';
-    cartSummary.style.display = 'block';
-    clearCartBtn.style.display = 'inline-block';
-    checkoutBtn.style.display = 'inline-block';
-    
-    // Create cart items table
-    const table = document.createElement('table');
-    table.className = 'cart-table';
-    
-    // Add table header
-    const tableHeader = document.createElement('thead');
-    tableHeader.innerHTML = `
-      <tr>
-        <th>Product</th>
-        <th>Price</th>
-        <th>Quantity</th>
-        <th>Subtotal</th>
-        <th>Action</th>
-      </tr>
-    `;
-    table.appendChild(tableHeader);
-    
-    // Add table body
-    const tableBody = document.createElement('tbody');
-    
-    let subtotal = 0;
-    let totalItems = 0;
-    
-    cart.forEach((item, index) => {
-      const priceNumber = parseInt(item.price.replace('৳', '').trim());
-      const itemSubtotal = priceNumber * item.quantity;
-      subtotal += itemSubtotal;
-      totalItems += item.quantity;
-      
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td data-label="Product">${item.crop}</td>
-        <td data-label="Price">${item.price}</td>
-        <td data-label="Quantity">
-          <div class="quantity-controls">
-            <button class="quantity-btn" onclick="decreaseQuantity(${index})">-</button>
-            <input type="number" min="1" value="${item.quantity}" onchange="updateQuantity(${index}, this.value)">
-            <button class="quantity-btn" onclick="increaseQuantity(${index})">+</button>
-          </div>
-        </td>
-        <td data-label="Subtotal">${itemSubtotal} ৳</td>
-        <td data-label="Action">
-          <button class="remove-btn" onclick="removeFromCart(${index})"><i class="fas fa-trash-alt"></i> Remove</button>
-        </td>
-      `;
-      tableBody.appendChild(row);
-    });
-    
-    table.appendChild(tableBody);
-    cartItems.appendChild(table);
-    
-    // Update cart summary
-    const deliveryFee = 80; // Fixed delivery fee
-    const total = subtotal + deliveryFee;
-    
-    document.getElementById('totalItems').innerText = totalItems;
-    document.getElementById('subtotal').innerText = subtotal + ' ৳';
-    document.getElementById('total').innerText = total + ' ৳';
-  }
-  
-  function updateQuantity(index, value) {
-    const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
-    const quantity = parseInt(value);
-    
-    if (quantity <= 0) {
-      removeFromCart(index);
-      return;
-    }
-    
-    cart[index].quantity = quantity;
-    localStorage.setItem('farmvilleCart', JSON.stringify(cart));
-    loadCart();
-  }
-  
-  function increaseQuantity(index) {
-    const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
-    cart[index].quantity += 1;
-    localStorage.setItem('farmvilleCart', JSON.stringify(cart));
-    loadCart();
-  }
-  
-  function decreaseQuantity(index) {
-    const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
-    if (cart[index].quantity > 1) {
-      cart[index].quantity -= 1;
-      localStorage.setItem('farmvilleCart', JSON.stringify(cart));
-    } else {
-      removeFromCart(index);
-    }
-    loadCart();
-  }
-  
-  function removeFromCart(index) {
-    const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
-    cart.splice(index, 1);
-    localStorage.setItem('farmvilleCart', JSON.stringify(cart));
-    loadCart();
-  }
-  
-  function clearCart() {
-    if (confirm('Are you sure you want to clear your cart?')) {
-      localStorage.setItem('farmvilleCart', JSON.stringify([]));
-      loadCart();
-    }
-  }
-  
-  function proceedToCheckout() {
-    const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
-    if (cart.length === 0) {
-      alert('Your cart is empty. Please add items before checking out.');
-      return;
-    }
-    
-    // Redirect to checkout page
-    window.location.href = 'customer-checkout.html';
-  }
 </script>
-
 </body>
 </html>
+<?php
+$conn->close();
+?>

@@ -113,13 +113,15 @@ CREATE TABLE `harvest_t` (
 
 CREATE TABLE `product_t` (
   `product_id` int(11) NOT NULL AUTO_INCREMENT,
-  `crop_type` varchar(100) NOT NULL,
-  `price_per_kg` decimal(10,2) DEFAULT NULL,
-  `status` enum('In Season','Off Season','Peak Season','Year-round') NOT NULL,
-  `availability` enum('In Stock','Low Stock','Almost Gone') NOT NULL,
+  `product_name` varchar(50) NOT NULL,
+  `product_type` varchar(20) NOT NULL,
+  `variety` varchar(20) DEFAULT NULL,
+  `seasonality` enum('In Season','Off Season','Peak Season','Year-round') NOT NULL,
+  `current_price` decimal(10,2) NOT NULL,
+  `stock_status` enum('In Stock','Low Stock','Almost Gone') NOT NULL,
   `last_updated` date NOT NULL,
   `delivery_estimate` varchar(50) DEFAULT NULL,
-  `bulk_order_discount` varchar(100) DEFAULT NULL,
+  `bulk_discount` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -127,18 +129,29 @@ CREATE TABLE `product_t` (
 -- Dumping data for table `product_t`
 --
 
-INSERT INTO `product_t` (`product_id`, `crop_type`, `price_per_kg`, `status`, `availability`, `last_updated`, `delivery_estimate`, `bulk_order_discount`) VALUES
-(1, 'Coarse Rice', 53.00, 'In Season', 'In Stock', '2025-04-17', '2-3 Days', 'Available'),
-(2, 'Fine Rice', 67.00, 'In Season', 'Low Stock', '2025-04-17', '3 Days', 'Available'),
-(3, 'Wheat Flour (Atta)', 64.00, 'In Season', 'In Stock', '2025-04-17', '1-2 Days', 'Contact for Offer'),
-(4, 'Fine Wheat Flour (Maida)', 54.00, 'In Season', 'In Stock', '2025-04-17', '2-3 Days', 'Available'),
-(5, 'Lentils (Masoor dal)', 130.00, 'In Season', 'Low Stock', '2025-04-17', '2 Days', 'Contact for Offer'),
-(6, 'Green grams (Moong dal)', 120.00, 'Peak Season', 'In Stock', '2025-04-17', '2-3 Days', 'Available'),
-(7, 'Soybean Oil', 180.00, 'Year-round', 'Almost Gone', '2025-04-17', '3-4 Days', 'Limited Offer'),
-(8, 'Mustard Oil', 230.00, 'Year-round', 'Low Stock', '2025-04-17', '3 Days', 'Contact for Offer'),
-(9, 'Potatoes', 35.00, 'In Season', 'In Stock', '2025-04-17', '1-2 Days', 'Available'),
-(10, 'Onions', 110.00, 'Off Season', 'Almost Gone', '2025-04-17', '2-4 Days', 'Not Available'),
-(11, 'Garlics', 220.00, 'Off Season', 'Low Stock', '2025-04-17', '3 Days', 'Contact for Offer');
+INSERT INTO `product_t` (
+  `product_id`, 
+  `product_name`, 
+  `product_type`, 
+  `variety`, 
+  `seasonality`, 
+  `current_price`, 
+  `stock_status`, 
+  `last_updated`, 
+  `delivery_estimate`, 
+  `bulk_discount`
+) VALUES
+(1, 'Coarse Rice', 'Grain', 'Local', 'In Season', 53.00, 'In Stock', '2025-04-17', '2-3 Days', 'Available'),
+(2, 'Fine Rice', 'Grain', 'Premium', 'In Season', 67.00, 'Low Stock', '2025-04-17', '3 Days', 'Available'),
+(3, 'Wheat Flour (Atta)', 'Flour', 'Standard', 'In Season', 64.00, 'In Stock', '2025-04-17', '1-2 Days', 'Contact for Offer'),
+(4, 'Fine Wheat Flour (Maida)', 'Flour', 'Refined', 'In Season', 54.00, 'In Stock', '2025-04-17', '2-3 Days', 'Available'),
+(5, 'Lentils (Masoor dal)', 'Pulse', 'Split', 'In Season', 130.00, 'Low Stock', '2025-04-17', '2 Days', 'Contact for Offer'),
+(6, 'Green grams (Moong dal)', 'Pulse', 'Whole', 'Peak Season', 120.00, 'In Stock', '2025-04-17', '2-3 Days', 'Available'),
+(7, 'Soybean Oil', 'Oil', 'Refined', 'Year-round', 180.00, 'Almost Gone', '2025-04-17', '3-4 Days', 'Limited Offer'),
+(8, 'Mustard Oil', 'Oil', 'Cold Pressed', 'Year-round', 230.00, 'Low Stock', '2025-04-17', '3 Days', 'Contact for Offer'),
+(9, 'Potatoes', 'Vegetable', 'Local', 'In Season', 35.00, 'In Stock', '2025-04-17', '1-2 Days', 'Available'),
+(10, 'Onions', 'Vegetable', 'Red', 'Off Season', 110.00, 'Almost Gone', '2025-04-17', '2-4 Days', 'Not Available'),
+(11, 'Garlic', 'Vegetable', 'Local', 'Off Season', 220.00, 'Low Stock', '2025-04-17', '3 Days', 'Contact for Offer');
 
 -- --------------------------------------------------------
 

@@ -12,7 +12,19 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-$sql = "SELECT product_id, crop_type, price_per_kg, status, availability, last_updated, delivery_estimate, bulk_order_discount FROM product_t";
+// Corrected SQL query to match the product_t table structure
+$sql = "SELECT 
+            product_id, 
+            product_name, 
+            product_type, 
+            variety, 
+            seasonality, 
+            current_price, 
+            stock_status, 
+            last_updated, 
+            delivery_estimate, 
+            bulk_discount 
+        FROM product_t";
 $result = $conn->query($sql);
 
 $products = [];
@@ -651,6 +663,20 @@ if ($result->num_rows > 0) {
         padding: 8px 15px;
         font-size: 13px;
       }
+     
+      .chart-container {
+  margin-top: 40px;
+  position: relative;
+  height: 500px;
+  min-height: 500px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+
+}
+ 
+      
     }
   </style>
 </head>
@@ -668,7 +694,7 @@ if ($result->num_rows > 0) {
 
     <div class="header-right">
         <div class="cart-icon">
-            <a href="customer-order-history.html#cart" title="Shopping Cart">
+            <a href="customer-order-history.php#cart" title="Shopping Cart">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
                 </svg>
@@ -682,13 +708,13 @@ if ($result->num_rows > 0) {
     </div>
 </header>
 
+<!-- Sidebar Navigation -->
 <div class="sidebar" id="sidebar">
-    <a href="customer-homepage.html"><i class="fas fa-home"></i> Home</a>
-    <a href="customer-product-catalog.php" class="active"><i class="fas fa-shopping-basket"></i> Browse Products</a>
-
-    <a href="customer-order-history.html"><i class="fas fa-history"></i> My Orders</a>
-    <a href="customer-feedback.html"><i class="fas fa-comment-alt"></i> Feedbacks</a>
-    <a href="Login_Page.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  <a href="customer-homepage.php" class="active"><i class="fas fa-home"></i> Home</a>
+  <a href="customer-product-catalog.php"><i class="fas fa-shopping-basket"></i> Browse Products</a>
+  <a href="customer-order-history.php"><i class="fas fa-history"></i> My Orders</a>
+  <a href="customer-feedback.html"><i class="fas fa-comment-alt"></i> Feedbacks</a>
+  <a href="Login_Page.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </div>
 
 <div class="sidebar-toggle" id="sidebarToggle">
@@ -703,44 +729,48 @@ if ($result->num_rows > 0) {
         <table class="product-table">
             <thead>
                 <tr>
-                    <th>Crop Type</th>
+                    <th>Product Name</th>
+                    <th>Type</th>
+                    <th>Variety</th>
                     <th>Price (per kg)</th>
-                    <th>Status</th>
-                    <th>Availability</th>
+                    <th>Seasonality</th>
+                    <th>Stock Status</th>
                     <th>Last Updated</th>
                     <th>Delivery Estimate</th>
-                    <th>Bulk Order Discount</th>
+                    <th>Bulk Discount</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody id="productList">
                 <?php foreach ($products as $product): ?>
                     <tr>
-                        <td data-label="Crop Type"><?php echo htmlspecialchars($product['crop_type']); ?></td>
-                        <td data-label="Price (per kg)"><?php echo htmlspecialchars($product['price_per_kg']); ?> ৳</td>
-                        <td data-label="Status">
+                        <td data-label="Product Name"><?php echo htmlspecialchars($product['product_name']); ?></td>
+                        <td data-label="Type"><?php echo htmlspecialchars($product['product_type']); ?></td>
+                        <td data-label="Variety"><?php echo htmlspecialchars($product['variety']); ?></td>
+                        <td data-label="Price (per kg)"><?php echo htmlspecialchars($product['current_price']); ?> ৳</td>
+                        <td data-label="Seasonality">
                             <span class="<?php
-                                echo $product['status'] == 'In Season' ? 'in-season' :
-                                    ($product['status'] == 'Off Season' ? 'off-season' :
-                                    ($product['status'] == 'Peak Season' ? 'in-season' : 'in-season'));
+                                echo $product['seasonality'] == 'In Season' ? 'in-season' :
+                                    ($product['seasonality'] == 'Off Season' ? 'off-season' :
+                                    ($product['seasonality'] == 'Peak Season' ? 'peak-season' : 'year-round'));
                             ?>">
-                                <?php echo htmlspecialchars($product['status']); ?>
+                                <?php echo htmlspecialchars($product['seasonality']); ?>
                             </span>
                         </td>
-                        <td data-label="Availability">
+                        <td data-label="Stock Status">
                             <span class="<?php
-                                echo $product['availability'] == 'In Stock' ? 'in-stock' :
-                                    ($product['availability'] == 'Low Stock' ? 'low-stock' : 'almost-gone');
+                                echo $product['stock_status'] == 'In Stock' ? 'in-stock' :
+                                    ($product['stock_status'] == 'Low Stock' ? 'low-stock' : 'almost-gone');
                             ?>">
-                                <?php echo htmlspecialchars($product['availability']); ?>
+                                <?php echo htmlspecialchars($product['stock_status']); ?>
                             </span>
                         </td>
                         <td data-label="Last Updated"><?php echo htmlspecialchars($product['last_updated']); ?></td>
                         <td data-label="Delivery Estimate"><?php echo htmlspecialchars($product['delivery_estimate']); ?></td>
-                        <td data-label="Bulk Order Discount"><?php echo htmlspecialchars($product['bulk_order_discount']); ?></td>
+                        <td data-label="Bulk Discount"><?php echo htmlspecialchars($product['bulk_discount']); ?></td>
                         <td data-label="Action">
                             <div class="order-actions">
-                                <button class="btn add-to-cart-btn" onclick="addToCart('<?php echo htmlspecialchars($product['crop_type'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($product['price_per_kg'], ENT_QUOTES); ?> ৳', 'FarmVille')">
+                                <button class="btn add-to-cart-btn" onclick="addToCart('<?php echo htmlspecialchars($product['product_name'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($product['current_price'], ENT_QUOTES); ?> ৳', 'FarmVille')">
                                     <i class="fas fa-cart-plus"></i> Add to Cart
                                 </button>
                             </div>
@@ -750,9 +780,9 @@ if ($result->num_rows > 0) {
             </tbody>
         </table>
         
-        <div class="chart-container" style="margin-top: 40px; position: relative; height: 320px;">
-            <canvas id="priceChart"></canvas>
-        </div>
+        <div class="chart-container" style="margin-top: 40px; position: relative; height: 400px; min-height: 400px;">
+    <canvas id="priceChart"></canvas>
+       </div>
     </section>
 </div>
 
@@ -794,7 +824,6 @@ function searchProducts() {
         const cells = row.getElementsByTagName('td');
         let found = false;
         
-        // Check each cell in the row
         Array.from(cells).forEach(cell => {
             const cellText = cell.textContent.toLowerCase();
             if (cellText.includes(input)) {
@@ -810,12 +839,10 @@ function searchProducts() {
         }
     });
 
-    // Show/hide no results message
     const noResultsMsg = document.getElementById('noResultsMsg');
     if (noResultsMsg) {
         noResultsMsg.style.display = resultsFound ? 'none' : 'block';
     } else if (!resultsFound) {
-        // Create no results message if it doesn't exist
         const msg = document.createElement('div');
         msg.id = 'noResultsMsg';
         msg.className = 'no-results-message';
@@ -828,51 +855,18 @@ function searchProducts() {
         table.parentNode.insertBefore(msg, table.nextSibling);
     }
 
-    // Update chart to show only matching products
     updateChartWithFilteredData(input);
 }
 
 function clearSearch() {
     document.getElementById('searchInput').value = '';
-    searchProducts(); // Run the search with empty input to show all
+    searchProducts();
 }
 
-function updateChartWithFilteredData(searchTerm) {
-    // Only run if chart exists
-    if (!window.priceChart) return;
-    
-    const rows = document.querySelectorAll('#productList tr');
-    const visibleCrops = [];
-    const visiblePrices = [];
-    
-    rows.forEach(row => {
-        if (row.style.display !== 'none') {
-            const cropType = row.querySelector('td[data-label="Crop Type"]').textContent;
-            const priceText = row.querySelector('td[data-label="Price (per kg)"]').textContent;
-            const price = parseFloat(priceText.replace('৳', '').trim());
-            
-            // If crop already exists in our array, calculate average
-            const existingIndex = visibleCrops.indexOf(cropType);
-            if (existingIndex > -1) {
-                visiblePrices[existingIndex] = (visiblePrices[existingIndex] + price) / 2;
-            } else {
-                visibleCrops.push(cropType);
-                visiblePrices.push(price);
-            }
-        }
-    });
-    
-    // Update chart data
-    window.priceChart.data.labels = visibleCrops;
-    window.priceChart.data.datasets[0].data = visiblePrices;
-    window.priceChart.update();
-}
-
-function addToCart(crop, price, vendor) {
+function addToCart(crop, price) {
     const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
 
-    // Check if product already exists in cart
-    const existingProduct = cart.find(item => item.crop === crop && item.vendor === vendor);
+    const existingProduct = cart.find(item => item.crop === crop);
 
     if (existingProduct) {
         existingProduct.quantity += 1;
@@ -880,15 +874,12 @@ function addToCart(crop, price, vendor) {
         cart.push({
             crop: crop,
             price: price,
-            vendor: vendor,
             quantity: 1
         });
     }
 
     localStorage.setItem('farmvilleCart', JSON.stringify(cart));
     updateCartCount();
-
-    // Show a nice notification
     showNotification(`${crop} added to cart!`);
 }
 
@@ -920,66 +911,235 @@ function showNotification(message) {
     }, 3000);
 }
 
-// Add notification styles dynamically
-const notificationStyles = document.createElement('style');
-notificationStyles.innerHTML = `
-    .notification {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: var(--success);
-        color: white;
-        padding: 15px 25px;
-        border-radius: 8px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        transform: translateY(100px);
-        opacity: 0;
-        transition: all 0.3s ease;
-        z-index: 1000;
-    }
-
-    .notification.show {
-        transform: translateY(0);
-        opacity: 1;
-    }
-
-    .notification-content {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .notification i {
-        font-size: 1.2rem;
-    }
-`;
-document.head.appendChild(notificationStyles);
-
-// Add styles for no results message
-const searchStyles = document.createElement('style');
-searchStyles.innerHTML = `
-    .no-results-message {
-        text-align: center;
-        padding: 30px;
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        margin: 20px 0;
-        display: none;
-        animation: fadeIn 0.5s ease-out forwards;
-    }
+// Chart initialization function with proper bar spacing
+function initChart() {
+    const ctx = document.getElementById('priceChart').getContext('2d');
     
-    .no-results-message i {
-        font-size: 2rem;
-        color: #6c757d;
-        margin-bottom: 10px;
-    }
+    // Get all products from the PHP data
+    const chartLabels = [];
+    const chartData = [];
+    const productVarieties = [];
+    const stockStatuses = [];
     
-    .no-results-message p {
-        color: #495057;
-        margin-bottom: 15px;
-    }
-`;
-document.head.appendChild(searchStyles);
+    <?php foreach ($products as $product): ?>
+        chartLabels.push('<?php echo addslashes($product['product_name']); ?>');
+        chartData.push(<?php echo floatval($product['current_price']); ?>);
+        productVarieties.push('<?php echo addslashes($product['variety']); ?>');
+        stockStatuses.push('<?php echo addslashes($product['stock_status']); ?>');
+    <?php endforeach; ?>
+    
+    // Generate dynamic colors based on stock status
+    const backgroundColors = stockStatuses.map(status => {
+        if (status === 'In Stock') return 'rgba(40, 167, 69, 0.7)';
+        if (status === 'Low Stock') return 'rgba(255, 193, 7, 0.7)';
+        if (status === 'Almost Gone') return 'rgba(220, 53, 69, 0.7)';
+        return 'rgba(108, 117, 125, 0.7)';
+    });
+    
+    const borderColors = stockStatuses.map(status => {
+        if (status === 'In Stock') return 'rgba(40, 167, 69, 1)';
+        if (status === 'Low Stock') return 'rgba(255, 193, 7, 1)';
+        if (status === 'Almost Gone') return 'rgba(220, 53, 69, 1)';
+        return 'rgba(108, 117, 125, 1)';
+    });
+    
+    window.priceChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Price per kg (৳)',
+                data: chartData,
+                backgroundColor: backgroundColors,
+                borderColor: borderColors,
+                borderWidth: 2,
+                borderRadius: 6,
+                borderSkipped: false,
+                hoverBackgroundColor: backgroundColors.map(color => color.replace('0.7', '0.9')),
+                hoverBorderWidth: 3,
+                // Control bar spacing here
+                categoryPercentage: 0.8,  // 80% of the available width for each category
+                barPercentage: 0.7,       // 70% of the available width for each bar
+                // Fixed bar thickness can also be used instead:
+                // barThickness: 25,
+                // maxBarThickness: 30
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Product Price Comparison',
+                    font: {
+                        size: 18,
+                        weight: 'bold'
+                    },
+                    color: '#1f408e',
+                    padding: {
+                        top: 10,
+                        bottom: 20
+                    }
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'rectRounded',
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const index = context.dataIndex;
+                            return [
+                                `Price: ৳${context.raw.toFixed(2)}`,
+                                `Variety: ${productVarieties[index] || 'N/A'}`,
+                                `Stock: ${stockStatuses[index] || 'N/A'}`
+                            ];
+                        }
+                    },
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 12
+                    },
+                    padding: 12,
+                    cornerRadius: 8,
+                    displayColors: false
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '৳' + value;
+                        },
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        },
+                        autoSkip: false,
+                        padding: 10 // Add padding between labels
+                    },
+                    // Add additional space between bars
+                    afterFit: function(axis) {
+                        axis.paddingTop = 20;
+                        axis.paddingBottom = 20;
+                    }
+                }
+            },
+            onClick: function(evt, elements) {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const productName = this.data.labels[index];
+                    
+                    const rows = document.querySelectorAll('#productList tr');
+                    rows.forEach(row => {
+                        row.style.backgroundColor = '';
+                        const nameCell = row.querySelector('td[data-label="Product Name"]');
+                        if (nameCell && nameCell.textContent.trim() === productName) {
+                            row.style.backgroundColor = 'rgba(44, 141, 173, 0.15)';
+                            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            
+                            setTimeout(() => {
+                                row.style.transition = 'background-color 0.5s';
+                                row.style.backgroundColor = 'rgba(44, 141, 173, 0.05)';
+                            }, 1000);
+                        }
+                    });
+                }
+            },
+            // Add spacing between bars
+            layout: {
+                padding: {
+                    left: 20,
+                    right: 20,
+                    top: 20,
+                    bottom: 20
+                }
+            }
+        }
+    });
+}
+
+function updateChartWithFilteredData(searchTerm) {
+    if (!window.priceChart) return;
+    
+    const rows = document.querySelectorAll('#productList tr');
+    const visibleProducts = [];
+    const visiblePrices = [];
+    const visibleVarieties = [];
+    const visibleStockStatuses = [];
+    
+    rows.forEach(row => {
+        if (row.style.display !== 'none') {
+            const productName = row.querySelector('td[data-label="Product Name"]');
+            const priceCell = row.querySelector('td[data-label="Price (per kg)"]');
+            const varietyCell = row.querySelector('td[data-label="Variety"]');
+            const stockCell = row.querySelector('td[data-label="Stock Status"] span');
+            
+            if (productName && priceCell) {
+                visibleProducts.push(productName.textContent.trim());
+                const priceText = priceCell.textContent.trim();
+                visiblePrices.push(parseFloat(priceText.replace('৳', '').trim()));
+                visibleVarieties.push(varietyCell ? varietyCell.textContent.trim() : '');
+                visibleStockStatuses.push(stockCell ? stockCell.textContent.trim() : '');
+            }
+        }
+    });
+    
+    // Update chart data
+    window.priceChart.data.labels = visibleProducts;
+    window.priceChart.data.datasets[0].data = visiblePrices;
+    
+    // Update colors based on stock status
+    window.priceChart.data.datasets[0].backgroundColor = visibleStockStatuses.map(status => {
+        if (status === 'In Stock') return 'rgba(40, 167, 69, 0.7)';
+        if (status === 'Low Stock') return 'rgba(255, 193, 7, 0.7)';
+        if (status === 'Almost Gone') return 'rgba(220, 53, 69, 0.7)';
+        return 'rgba(108, 117, 125, 0.7)';
+    });
+    
+    window.priceChart.update();
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initChart();
+    updateCartCount();
+    
+    const chartContainer = document.querySelector('.chart-container');
+    chartContainer.style.opacity = '0';
+    chartContainer.style.transform = 'translateY(20px)';
+    chartContainer.style.transition = 'all 0.8s ease-out';
+    
+    setTimeout(() => {
+        chartContainer.style.opacity = '1';
+        chartContainer.style.transform = 'translateY(0)';
+    }, 300);
+});
 
 // Sidebar functionality
 const sidebar = document.getElementById('sidebar');
@@ -987,18 +1147,15 @@ const sidebarToggle = document.getElementById('sidebarToggle');
 const body = document.body;
 let sidebarTimeout;
 
-// Open sidebar when hovering over toggle button
 sidebarToggle.addEventListener('mouseenter', () => {
     clearTimeout(sidebarTimeout);
     body.classList.add('sidebar-open');
 });
 
-// Keep sidebar open when mouse enters the sidebar
 sidebar.addEventListener('mouseenter', () => {
     clearTimeout(sidebarTimeout);
 });
 
-// Schedule closing sidebar when mouse leaves sidebar or toggle
 sidebar.addEventListener('mouseleave', () => {
     sidebarTimeout = setTimeout(() => {
         body.classList.remove('sidebar-open');
@@ -1006,7 +1163,6 @@ sidebar.addEventListener('mouseleave', () => {
 });
 
 sidebarToggle.addEventListener('mouseleave', (e) => {
-    // Only close if we're not moving into the sidebar
     if (e.relatedTarget !== sidebar) {
         sidebarTimeout = setTimeout(() => {
             body.classList.remove('sidebar-open');
@@ -1014,149 +1170,8 @@ sidebarToggle.addEventListener('mouseleave', (e) => {
     }
 });
 
-// Click toggle for mobile devices
 sidebarToggle.addEventListener('click', () => {
     body.classList.toggle('sidebar-open');
-});
-
-// Chart initialization function
-function initChart() {
-    const ctx = document.getElementById('priceChart').getContext('2d');
-    
-    // Get unique crop types and their prices from PHP data
-    const chartLabels = [];
-    const chartData = [];
-    
-    // Process the product data already in the table
-    const rows = document.querySelectorAll('#productList tr');
-    rows.forEach(row => {
-        const cropType = row.querySelector('td[data-label="Crop Type"]');
-        const priceCell = row.querySelector('td[data-label="Price (per kg)"]');
-        
-        if (cropType && priceCell) {
-            const crop = cropType.textContent.trim();
-            const priceText = priceCell.textContent.trim();
-            const price = parseFloat(priceText.replace('৳', '').trim());
-            
-            // If crop already exists in our array, calculate average
-            const existingIndex = chartLabels.indexOf(crop);
-            if (existingIndex > -1) {
-                chartData[existingIndex] = (chartData[existingIndex] + price) / 2;
-            } else {
-                chartLabels.push(crop);
-                chartData.push(price);
-            }
-        }
-    });
-    
-    const chartDataset = {
-        labels: chartLabels,
-        datasets: [{
-            label: 'Price per kg (৳)',
-            data: chartData,
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.6)',
-                'rgba(54, 162, 235, 0.6)',
-                'rgba(255, 206, 86, 0.6)',
-                'rgba(75, 192, 192, 0.6)',
-                'rgba(153, 102, 255, 0.6)',
-                'rgba(255, 159, 64, 0.6)',
-                'rgba(199, 21, 133, 0.6)',
-                'rgba(60, 179, 113, 0.6)',
-                'rgba(178, 34, 34, 0.6)',
-                'rgba(218, 165, 32, 0.6)',
-                'rgba(105, 105, 105, 0.6)'
-            ],
-            borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)',
-                'rgba(199, 21, 133, 1)',
-                'rgba(60, 179, 113, 1)',
-                'rgba(178, 34, 34, 1)',
-                'rgba(218, 165, 32, 1)',
-                'rgba(105, 105, 105, 1)'
-            ],
-            borderWidth: 1
-        }]
-    };
-
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            title: {
-                display: true,
-                text: 'Average Price per Crop Type',
-                font: {
-                    size: 18
-                },
-                color: '#1f408e',
-                padding: {
-                    top: 10,
-                    bottom: 20
-                }
-            },
-            legend: {
-                position: 'bottom',
-                labels: {
-                    boxWidth: 12,
-                    padding: 15
-                }
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        return context.dataset.label + ': ৳' + context.raw;
-                    }
-                }
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: function(value) {
-                        return '৳' + value;
-                    }
-                },
-                grid: {
-                    color: 'rgba(0, 0, 0, 0.05)'
-                }
-            },
-            x: {
-                grid: {
-                    color: 'rgba(0, 0, 0, 0.05)'
-                }
-            }
-        },
-        animation: {
-            duration: 1500,
-            easing: 'easeOutQuart'
-        }
-    };
-
-    // Create chart instance
-    window.priceChart = new Chart(ctx, {
-        type: 'bar',
-        data: chartDataset,
-        options: chartOptions
-    });
-}
-
-// Add event listener for search input
-document.getElementById('searchInput').addEventListener('keyup', searchProducts);
-
-// Initialize functions when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize chart
-    initChart();
-    
-    // Update cart count on page load
-    updateCartCount();
 });
 </script>
 
