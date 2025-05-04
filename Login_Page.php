@@ -94,7 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         header("Location: customer/dashboard.php");
                         break;
                     case "storage-manager":
-                        header("Location: storage/dashboard.php");
+                        header("Location: storage.php");
                         break;
                     default:
                         header("Location: dashboard.php");
