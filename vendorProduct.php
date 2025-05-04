@@ -1,7 +1,7 @@
 <?php
 include 'db.php';
 
-// Get c
+// Get current page name
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <!DOCTYPE html>
@@ -60,82 +60,27 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <span>☰</span>
     </button>
     <ul>
-        <li>
-            <a href="vendorHome.php" class="<?php echo ($current_page == 'vendorHome.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Dashboard</span>
-            </a>
-        </li>
-        <li>
-            <a href="vendorProduct.php" class="<?php echo ($current_page == 'vendorProduct.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Product Info</span>
-            </a>
-        </li>
-        <li>
-            <a href="HistoricalData.php" class="<?php echo ($current_page =='HistoricalData.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Historical Production Data</span>
-            </a>
-        </li>
-        <li>
-            <a href="DemandData.php" class="<?php echo ($current_page =='DemandData.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Demand Data</span>
-            </a>
-        </li>
-        <li>
-            <a href="SupplyLevel.php" class="<?php echo ($current_page =='SupplyLevel.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Supply Level</span>
-            </a>
-        </li>
-        <li>
-            <a href="marketPrice.php" class="<?php echo ($current_page =='marketPrice.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Historical and Current prices</span>
-            </a>
-        </li>
-        <li>
-            <a href="vendorGraph.php" class="<?php echo ($current_page == 'vendorGraph.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Graph/Chart</span>
-            </a>
-        </li>
-        <li>
-            <a href="Recommendations.php" class="<?php echo ($current_page == 'Recommendations.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Recommendations</span>
-            </a>
-        </li>
-        <li>
-            <a href="buyerAndSellerDirectory.php" class="<?php echo ($current_page == 'buyerAndSellerDirectory.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Buyer/Seller Directory</span>
-            </a>
-        </li>
-        <li>
-            <a href="vendorProfile.php" class="<?php echo ($current_page == 'vendorProfile.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Profile 👤</span>
-            </a>
-        </li>
-        <li>
-            <a href="login.php" class="<?php echo ($current_page == 'login.php') ? 'active' : ''; ?>">
-                <span class="icon">⏻</span>
-                <span class="text">Sign Out</span>
-            </a>
-        </li>
+        <li><a href="vendorHome.php" class="<?php echo ($current_page == 'vendorHome.php') ? 'active' : ''; ?>">Dashboard</a></li>
+        <li><a href="vendorProduct.php" class="<?php echo ($current_page == 'vendorProduct.php') ? 'active' : ''; ?>">Product Info</a></li>
+        <li><a href="HistoricalData.php" class="<?php echo ($current_page =='HistoricalData.php') ? 'active' : ''; ?>">Historical Production Data</a></li>
+        <li><a href="DemandData.php" class="<?php echo ($current_page =='DemandData.php') ? 'active' : ''; ?>">Demand Data</a></li>
+        <li><a href="SupplyLevel.php" class="<?php echo ($current_page =='SupplyLevel.php') ? 'active' : ''; ?>">Supply Level</a></li>
+        <li><a href="marketPrice.php" class="<?php echo ($current_page =='marketPrice.php') ? 'active' : ''; ?>">Historical and Current prices</a></li>
+        <li><a href="vendorGraph.php" class="<?php echo ($current_page == 'vendorGraph.php') ? 'active' : ''; ?>">Graph/Chart</a></li>
+        <li><a href="Recommendations.php" class="<?php echo ($current_page == 'Recommendations.php') ? 'active' : ''; ?>">Recommendations</a></li>
+        <li><a href="buyerAndSellerDirectory.php" class="<?php echo ($current_page == 'buyerAndSellerDirectory.php') ? 'active' : ''; ?>">Buyer/Seller Directory</a></li>
+        <li><a href="vendorProfile.php" class="<?php echo ($current_page == 'vendorProfile.php') ? 'active' : ''; ?>">Profile 👤</a></li>
+        <li><a href="login.php" class="<?php echo ($current_page == 'login.php') ? 'active' : ''; ?>"><span class="icon">⏻</span> Sign Out</a></li>
     </ul>
 </div>
 
 <div class="content">
     <h2>Product Information</h2>
 
-    <!-- Search Bar with Icon -->
+    <!-- Search Bar -->
     <div class="d-flex justify-content-end mb-3">
         <div class="input-group w-25">
-            <span class="input-group-text bg-white"><i class="bi bi-search"></i>🔍</span>
+            <span class="input-group-text bg-white">🔍</span>
             <input type="text" id="searchInput" class="form-control" placeholder="Search products...">
         </div>
     </div>
@@ -155,7 +100,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </thead>
             <tbody>
                 <?php
-                // Check if 'delete' GET parameter is set to delete a product
+                // Delete product if delete parameter is set
                 if (isset($_GET['delete_product_name'])) {
                     $deleteProductName = urldecode($_GET['delete_product_name']);
                     $deleteSQL = "DELETE FROM Product_T WHERE ProductName = '$deleteProductName'";
@@ -167,20 +112,20 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     }
                 }
 
-                // Fetch and display product information
+                // Fetch product data
                 $query = "SELECT * FROM Product_T";
                 $result = $conn->query($query);
 
                 if ($result && $result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
-                        $productName = urlencode($row['ProductName']); // encode for URL safety
+                        $productName = urlencode($row['ProductName']); // encode for URL
                         echo "<tr>
                                 <td>{$row['ProductID']}</td>
                                 <td>{$row['ProductName']}</td>
                                 <td>{$row['ProductType']}</td>
-                                <td>{$row['Variety']}</td>
-                                <td>{$row['Seasonality']}</td>
-                                <td>{$row['CurrentPrice']} tk</td>
+                                <td>{$row['ProductVariety']}</td>
+                                <td>{$row['ProductSeasonality']}</td>
+                                <td>{$row['ProductPrice']} tk</td>
                                 <td>
                                     <a href='vendorUpdate.php?product_name=$productName' class='btn btn-warning btn-sm'>Edit</a>
                                     <a href='vendorProduct.php?delete_product_name=$productName' class='btn btn-danger btn-sm' onclick='return confirm(\"Are you sure you want to delete this product?\")'>Delete</a>
@@ -200,7 +145,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     </div>
 </div>
 
-<!-- Search script -->
+<!-- Live Search Filter -->
 <script>
 document.getElementById('searchInput').addEventListener('keyup', function() {
     let filter = this.value.toLowerCase();
@@ -208,11 +153,7 @@ document.getElementById('searchInput').addEventListener('keyup', function() {
 
     rows.forEach(row => {
         let text = row.innerText.toLowerCase();
-        if (text.includes(filter)) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
+        row.style.display = text.includes(filter) ? '' : 'none';
     });
 });
 </script>

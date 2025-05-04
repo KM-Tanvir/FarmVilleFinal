@@ -130,9 +130,29 @@ $current_page = basename($_SERVER['PHP_SELF']);
 </div>
 
 <div class="container">
+<br><br><br>
     <h2>Product List</h2>
-    <?php if (isset($message)) echo "<div class='alert alert-info'>$message</div>"; ?>
+    <?php 
+    // Handle Delete Action
+    if (isset($_GET['delete_product_id'])) {
+        $delete_id = $_GET['delete_product_id'];
+        $delete_query = "DELETE FROM Product_T WHERE ProductID = '$delete_id'";
+        if ($conn->query($delete_query) === TRUE) {
+            $message = "Product deleted successfully.";
+        } else {
+            $message = "Error deleting product: " . $conn->error;
+        }
+    }
 
+    if (isset($message)) echo "<div class='alert alert-info'>$message</div>";
+    ?>
+    <!-- Search Bar -->
+    <div class="d-flex justify-content-end mb-3">
+        <div class="input-group w-25">
+            <span class="input-group-text bg-white">🔍</span>
+            <input type="text" id="searchInput" class="form-control" placeholder="Search products...">
+        </div>
+    </div>
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -155,8 +175,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     echo "<tr>
                             <td>{$row['ProductID']}</td>
                             <td>{$row['ProductName']}</td>
-                            <td>{$row['Yield']}</td>
-                            <td>{$row['Acreage']}</td>
+                            <td>{$row['ProductYield']}</td>
+                            <td>{$row['ProductAcreage']}</td>
                             <td>{$row['Cost']}</td>
                             <td>
                                 <a href='HistoricalDataEdit.php?product_id={$row['ProductID']}' class='btn btn-warning btn-sm'>Edit</a>
@@ -171,8 +191,21 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </tbody>
     </table>
     <br>
-    <a href="HistoricalDataAdd.php" class="btn btn-success mb-3">Add New Product</a>
+    <a href="vendorAddProduct.php" class="btn btn-success mb-3">Add New Product</a>
 </div>
+
+<!-- Live Search Filter -->
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+    });
+});
+</script>
 
 </body>
 </html>

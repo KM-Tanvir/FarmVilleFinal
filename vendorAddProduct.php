@@ -38,13 +38,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
             cursor: pointer;
             margin-bottom: 20px;
         }
-        ul { list-style: none; padding: 0; }
-        ul li { margin: 10px 0; }
-        ul li a { display: flex; align-items: center; }
-        .icon { margin-right: 10px; font-size: 20px; }
-        .input-group .form-control::placeholder {
-            color: #aaa;
-        }
     </style>
     <script>
         function toggleSidebar() {
@@ -60,72 +53,17 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <span>☰</span>
     </button>
     <ul>
-        <li>
-            <a href="vendorHome.php" class="<?php echo ($current_page == 'vendorHome.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Dashboard</span>
-            </a>
-        </li>
-        <li>
-            <a href="vendorProduct.php" class="<?php echo ($current_page == 'vendorProduct.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Product Info</span>
-            </a>
-        </li>
-        <li>
-            <a href="HistoricalData.php" class="<?php echo ($current_page =='HistoricalData.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Historical Production Data</span>
-            </a>
-        </li>
-        <li>
-            <a href="DemandData.php" class="<?php echo ($current_page =='DemandData.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Demand Data</span>
-            </a>
-        </li>
-        <li>
-            <a href="SupplyLevel.php" class="<?php echo ($current_page =='SupplyLevel.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Supply Level</span>
-            </a>
-        </li>
-        <li>
-            <a href="marketPrice.php" class="<?php echo ($current_page =='marketPrice.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Historical and Current prices</span>
-            </a>
-        </li>
-        <li>
-            <a href="vendorGraph.php" class="<?php echo ($current_page == 'vendorGraph.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Graph/Chart</span>
-            </a>
-        </li>
-        <li>
-            <a href="Recommendations.php" class="<?php echo ($current_page == 'Recommendations.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Recommendations</span>
-            </a>
-        </li>
-        <li>
-            <a href="buyerAndSellerDirectory.php" class="<?php echo ($current_page == 'buyerAndSellerDirectory.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Buyer/Seller Directory</span>
-            </a>
-        </li>
-        <li>
-            <a href="vendorProfile.php" class="<?php echo ($current_page == 'vendorProfile.php') ? 'active' : ''; ?>">
-                <span class="icon"></span>
-                <span class="text">Profile 👤</span>
-            </a>
-        </li>
-        <li>
-            <a href="login.php" class="<?php echo ($current_page == 'login.php') ? 'active' : ''; ?>">
-                <span class="icon">⏻</span>
-                <span class="text">Sign Out</span>
-            </a>
-        </li>
+        <li><a href="vendorHome.php" class="<?php echo ($current_page == 'vendorHome.php') ? 'active' : ''; ?>">Dashboard</a></li>
+        <li><a href="vendorProduct.php" class="<?php echo ($current_page == 'vendorProduct.php') ? 'active' : ''; ?>">Product Info</a></li>
+        <li><a href="HistoricalData.php" class="<?php echo ($current_page == 'HistoricalData.php') ? 'active' : ''; ?>">Historical Production Data</a></li>
+        <li><a href="DemandData.php" class="<?php echo ($current_page == 'DemandData.php') ? 'active' : ''; ?>">Demand Data</a></li>
+        <li><a href="SupplyLevel.php" class="<?php echo ($current_page == 'SupplyLevel.php') ? 'active' : ''; ?>">Supply Level</a></li>
+        <li><a href="marketPrice.php" class="<?php echo ($current_page == 'marketPrice.php') ? 'active' : ''; ?>">Historical and Current prices</a></li>
+        <li><a href="vendorGraph.php" class="<?php echo ($current_page == 'vendorGraph.php') ? 'active' : ''; ?>">Graph/Chart</a></li>
+        <li><a href="Recommendations.php" class="<?php echo ($current_page == 'Recommendations.php') ? 'active' : ''; ?>">Recommendations</a></li>
+        <li><a href="buyerAndSellerDirectory.php" class="<?php echo ($current_page == 'buyerAndSellerDirectory.php') ? 'active' : ''; ?>">Buyer/Seller Directory</a></li>
+        <li><a href="vendorProfile.php" class="<?php echo ($current_page == 'vendorProfile.php') ? 'active' : ''; ?>">Profile 👤</a></li>
+        <li><a href="login.php" class="<?php echo ($current_page == 'login.php') ? 'active' : ''; ?>">Sign Out</a></li>
     </ul>
 </div>
 
@@ -135,20 +73,23 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <?php
     if (isset($_POST['add'])) {
         $productName = $_POST['ProductName'];
+        $productPrice = $_POST['ProductPrice'];
         $productType = $_POST['ProductType'];
-        $variety = $_POST['Variety'];
-        $seasonality = $_POST['Seasonality'];
-        $currentPrice = $_POST['CurrentPrice'];
-        $yield = $_POST['Yield']; // New field
-        $acreage = $_POST['Acreage']; // New field
-        $cost = $_POST['Cost']; // New field
+        $productVariety = $_POST['ProductVariety'];
+        $productSeasonality = $_POST['ProductSeasonality'];
+        $productYield = $_POST['ProductYield'];
+        $productAcreage = $_POST['ProductAcreage'];
+        $cost = $_POST['Cost'];
 
-        if (empty($productName) || empty($productType) || empty($variety) || empty($seasonality) || empty($currentPrice) || empty($yield) || empty($acreage) || empty($cost)) {
+        // Validate inputs
+        if (empty($productName) || empty($productPrice) || empty($productType) || empty($productVariety) || empty($productSeasonality) || empty($productYield) || empty($productAcreage) || empty($cost)) {
             echo "<p class='text-danger'>All fields are required!</p>";
         } else {
-            $insertSQL = "INSERT INTO Product_T (ProductName, ProductType, Variety, Seasonality, CurrentPrice, Yield, Acreage, Cost) 
-                        VALUES ('$productName', '$productType', '$variety', '$seasonality', '$currentPrice', '$yield', '$acreage', '$cost')";
+            // Prepare the SQL query for inserting data
+            $insertSQL = "INSERT INTO Product_T (ProductName, ProductPrice, ProductType, ProductVariety, ProductSeasonality, ProductYield, ProductAcreage, Cost) 
+                          VALUES ('$productName', '$productPrice', '$productType', '$productVariety', '$productSeasonality', '$productYield', '$productAcreage', '$cost')";
 
+            // Execute the query
             if ($conn->query($insertSQL) === TRUE) {
                 echo "<p class='text-success mt-3'>Product Added Successfully!</p>";
             } else {
@@ -164,28 +105,28 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <input type="text" name="ProductName" class="form-control" required>
         </div>
         <div class="mb-3">
+            <label>Product Price</label>
+            <input type="text" name="ProductPrice" class="form-control" required>
+        </div>
+        <div class="mb-3">
             <label>Product Type</label>
             <input type="text" name="ProductType" class="form-control" required>
         </div>
         <div class="mb-3">
-            <label>Variety</label>
-            <input type="text" name="Variety" class="form-control" required>
+            <label>Product Variety</label>
+            <input type="text" name="ProductVariety" class="form-control" required>
         </div>
         <div class="mb-3">
-            <label>Seasonality</label>
-            <input type="text" name="Seasonality" class="form-control" required>
+            <label>Product Seasonality</label>
+            <input type="text" name="ProductSeasonality" class="form-control" required>
         </div>
         <div class="mb-3">
-            <label>Price (per kg)</label>
-            <input type="text" name="CurrentPrice" class="form-control" required>
+            <label>Product Yield</label>
+            <input type="number" step="0.01" name="ProductYield" class="form-control" required>
         </div>
         <div class="mb-3">
-            <label>Yield</label>
-            <input type="number" step="0.01" name="Yield" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label>Acreage</label>
-            <input type="number" step="0.01" name="Acreage" class="form-control" required>
+            <label>Product Acreage</label>
+            <input type="number" step="0.01" name="ProductAcreage" class="form-control" required>
         </div>
         <div class="mb-3">
             <label>Cost</label>

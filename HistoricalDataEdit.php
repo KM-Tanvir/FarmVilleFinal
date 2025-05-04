@@ -11,7 +11,7 @@ $message = "";
 // Fetch product details if editing
 if (isset($_GET['product_id'])) {
     $productID = intval($_GET['product_id']);
-    $query = "SELECT * FROM Product_T WHERE ProductID = $productID";
+    $query = "SELECT ProductID, ProductName, ProductYield, ProductAcreage, Cost FROM Product_T WHERE ProductID = $productID";
     $result = $conn->query($query);
     if ($result && $result->num_rows > 0) {
         $product = $result->fetch_assoc();
@@ -24,18 +24,18 @@ if (isset($_GET['product_id'])) {
 if (isset($_POST['save'])) {
     $productID = intval($_POST['product_id']);
     $productName = $conn->real_escape_string($_POST['product_name']);
-    $yield = floatval($_POST['yield']);
-    $acreage = floatval($_POST['acreage']);
+    $productYield = floatval($_POST['product_yield']);
+    $productAcreage = floatval($_POST['product_acreage']);
     $cost = floatval($_POST['cost']);
     
     $updateSQL = "UPDATE Product_T
-                    SET ProductName='$productName', Yield=$yield, Acreage=$acreage, Cost=$cost
+                    SET ProductName='$productName', ProductYield=$productYield, ProductAcreage=$productAcreage, Cost=$cost
                     WHERE ProductID=$productID";
     
     if ($conn->query($updateSQL) === TRUE) {
         $message = "<p class='text-success'>Record updated successfully!</p>";
         // Refresh product details
-        $query = "SELECT * FROM Product_T WHERE ProductID = $productID";
+        $query = "SELECT ProductID, ProductName, ProductYield, ProductAcreage, Cost FROM Product_T WHERE ProductID = $productID";
         $result = $conn->query($query);
         if ($result && $result->num_rows > 0) {
             $product = $result->fetch_assoc();
@@ -79,6 +79,18 @@ if (isset($_POST['save'])) {
         ul li a { display: flex; align-items: center; }
         .icon { margin-right: 10px; font-size: 20px; }
     </style>
+    <style>
+    .btn-green {
+        background-color: #28a745; 
+        border-color: #28a745;
+    }
+
+    .btn-green:hover {
+        background-color: #218838; 
+        border-color: #1e7e34;
+    }
+</style>
+
     <script>
         function toggleSidebar() {
             var sidebar = document.getElementById('sidebar');
@@ -116,22 +128,27 @@ if (isset($_POST['save'])) {
             <form method="post">
                 <input type="hidden" name="product_id" value="<?php echo $product['ProductID']; ?>">
                 <div class="mb-3">
+                    <label class="form-label">Product ID</label>
+                    <input type="text" name="product_id" class="form-control" value="<?php echo $product['ProductID']; ?>" disabled>
+                </div>
+                <div class="mb-3">
                     <label class="form-label">Product Name</label>
                     <input type="text" name="product_name" class="form-control" value="<?php echo htmlspecialchars($product['ProductName']); ?>" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Yield</label>
-                    <input type="number" step="0.01" name="yield" class="form-control" value="<?php echo htmlspecialchars($product['Yield']); ?>" required>
+                    <label class="form-label">Product Yield</label>
+                    <input type="number" step="0.01" name="product_yield" class="form-control" value="<?php echo htmlspecialchars($product['ProductYield']); ?>" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Acreage</label>
-                    <input type="number" step="0.01" name="acreage" class="form-control" value="<?php echo htmlspecialchars($product['Acreage']); ?>" required>
+                    <label class="form-label">Product Acreage</label>
+                    <input type="number" step="0.01" name="product_acreage" class="form-control" value="<?php echo htmlspecialchars($product['ProductAcreage']); ?>" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Cost</label>
                     <input type="number" step="0.01" name="cost" class="form-control" value="<?php echo htmlspecialchars($product['Cost']); ?>" required>
                 </div>
-                <button type="submit" name="save" class="btn btn-primary">Save Changes</button>
+                <button type="submit" name="save" class="btn btn-green">Save Changes</button>
+
                 <a href="HistoricalData.php" class="btn btn-secondary ms-2">Back to Directory</a>
             </form>
         <?php } ?>
