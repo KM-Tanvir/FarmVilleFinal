@@ -851,7 +851,7 @@ section, button, a.btn, form {
   <a href="customer-homepage.php" class="active"><i class="fas fa-home"></i> Home</a>
   <a href="customer-product-catalog.php"><i class="fas fa-shopping-basket"></i> Browse Products</a>
   <a href="customer-order-history.php"><i class="fas fa-history"></i> My Orders</a>
-  <a href="customer-feedback.html"><i class="fas fa-comment-alt"></i> Feedbacks</a>
+  <a href="customer-feedback.php"><i class="fas fa-comment-alt"></i> Feedbacks</a>
   <a href="Login_Page.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </div>
 

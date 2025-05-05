@@ -929,6 +929,39 @@ $total = $subtotal + $deliveryFee;
       .cart-table th {
         display: none;
       }
+
+/* Sidebar base styles */
+.sidebar {
+  width: 0;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease, width 0.3s ease;
+}
+
+body.sidebar-open .sidebar {
+  width: 280px;
+  transform: translateX(0);
+}
+
+/* Sidebar toggle button positioning */
+.sidebar-toggle {
+  transition: left 0.3s ease;
+}
+
+body.sidebar-open .sidebar-toggle {
+  left: 280px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 280px !important;
+  }
+  
+  body.sidebar-open .main-content {
+    margin-left: 0;
+    transform: translateX(280px);
+  }
+}
     }
   </style>
 </head>
@@ -960,7 +993,7 @@ $total = $subtotal + $deliveryFee;
   <a href="customer-homepage.php"><i class="fas fa-home"></i> Home</a>
   <a href="customer-product-catalog.php"><i class="fas fa-shopping-basket"></i> Browse Products</a>
   <a href="customer-order-history.php" class="active"><i class="fas fa-history"></i> My Orders</a>
-  <a href="customer-feedback.html"><i class="fas fa-comment-alt"></i> Feedbacks</a>
+  <a href="customer-feedback.php"><i class="fas fa-comment-alt"></i> Feedbacks</a>
   <a href="Login_Page.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </div>
 
@@ -1257,29 +1290,60 @@ $total = $subtotal + $deliveryFee;
       window.location.href = 'customer-checkout.php';
   });
 
-  // Sidebar functionality
+// Sidebar functionality
+document.addEventListener('DOMContentLoaded', function() {
   const sidebar = document.getElementById('sidebar');
   const sidebarToggle = document.getElementById('sidebarToggle');
   const body = document.body;
-  let sidebarTimeout;
-  
-  // Toggle sidebar on click (for mobile)
+
+  // First, ensure the sidebar is closed by default
+  body.classList.remove('sidebar-open');
+
+  // Simple toggle function
+  function toggleSidebar() {
+    body.classList.toggle('sidebar-open');
+  }
+
+  // Click handler for the toggle button
   sidebarToggle.addEventListener('click', function(e) {
     e.stopPropagation();
-    body.classList.toggle('sidebar-open');
+    toggleSidebar();
   });
-  
+
   // Close sidebar when clicking outside
   document.addEventListener('click', function(e) {
-    if (!sidebar.contains(e.target) && e.target !== sidebarToggle) {
+    if (body.classList.contains('sidebar-open') && 
+        !sidebar.contains(e.target) && 
+        !sidebarToggle.contains(e.target)) {
       body.classList.remove('sidebar-open');
     }
   });
-  
-  // Prevent sidebar from closing when clicking inside it
+
+  // Prevent clicks inside sidebar from closing it
   sidebar.addEventListener('click', function(e) {
     e.stopPropagation();
   });
+
+  // For desktop hover effect (optional)
+  if (window.matchMedia("(min-width: 769px)").matches) {
+    let hoverTimeout;
+
+    sidebarToggle.addEventListener('mouseenter', function() {
+      clearTimeout(hoverTimeout);
+      body.classList.add('sidebar-open');
+    });
+
+    sidebar.addEventListener('mouseleave', function() {
+      hoverTimeout = setTimeout(function() {
+        body.classList.remove('sidebar-open');
+      }, 300);
+    });
+
+    sidebar.addEventListener('mouseenter', function() {
+      clearTimeout(hoverTimeout);
+    });
+  }
+});
 
   // Sync cart on page load
   document.addEventListener('DOMContentLoaded', function() {

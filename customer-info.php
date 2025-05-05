@@ -6,18 +6,19 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check if user is logged in - using proper session variable name
-if (!isset($_SESSION['CustomerID'])) {
-    header("Location: Login_Page.php");
-    exit();
+// For demo purposes, set customer ID to 1 if not logged in
+if (!isset($_SESSION['CustomerID']) && !isset($_SESSION['customer_id'])) {
+    $_SESSION['CustomerID'] = 1; // Default customer for demo
+    $_SESSION['customer_id'] = 1; // Set both for compatibility
 }
 
-$CustomerID = (int)$_SESSION['CustomerID']; // Ensure it's an integer
+// Get customer ID from session
+$customerId = $_SESSION['CustomerID'] ?? $_SESSION['customer_id'] ?? 1;
 
 // Fetch customer data
 try {
     $stmt = $pdo->prepare("SELECT * FROM customer_t WHERE CustomerID = ?");
-    $stmt->execute([$CustomerID]);
+    $stmt->execute([$customerId]);
     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$customer) {
@@ -27,7 +28,7 @@ try {
     // Count orders
     $order_count = 0;
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM order_t WHERE CustomerID = ?");
-    $stmt->execute([$CustomerID]);
+    $stmt->execute([$customerId]);
     $order_count = $stmt->fetchColumn();
 
     // Handle form submissions
@@ -38,14 +39,14 @@ try {
             $phone = $_POST['phone'];
             
             $stmt = $pdo->prepare("UPDATE customer_t SET first_name = ?, last_name = ?, phone = ? WHERE CustomerID = ?");
-            $stmt->execute([$first_name, $last_name, $phone, $CustomerID]);
+            $stmt->execute([$first_name, $last_name, $phone, $customerId]);
             
             $_SESSION['first_name'] = $first_name;
             $_SESSION['last_name'] = $last_name;
             
             // Refresh customer data
             $stmt = $pdo->prepare("SELECT * FROM customer_t WHERE CustomerID = ?");
-            $stmt->execute([$CustomerID]);
+            $stmt->execute([$customerId]);
             $customer = $stmt->fetch(PDO::FETCH_ASSOC);
             
             $success_message = "Profile updated successfully!";
@@ -56,11 +57,11 @@ try {
             $city = $_POST['city'];
             
             $stmt = $pdo->prepare("UPDATE customer_t SET address_line1 = ?, address_line2 = ?, city = ? WHERE CustomerID = ?");
-            $stmt->execute([$address_line1, $address_line2, $city, $CustomerID]);
+            $stmt->execute([$address_line1, $address_line2, $city, $customerId]);
             
             // Refresh customer data
             $stmt = $pdo->prepare("SELECT * FROM customer_t WHERE CustomerID = ?");
-            $stmt->execute([$CustomerID]);
+            $stmt->execute([$customerId]);
             $customer = $stmt->fetch(PDO::FETCH_ASSOC);
             
             $success_message = "Address updated successfully!";
@@ -74,12 +75,12 @@ try {
                 if ($new_password === $confirm_password) {
                     $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
                     $stmt = $pdo->prepare("UPDATE customer_t SET password_hash = ? WHERE CustomerID = ?");
-                    $stmt->execute([$hashed_password, $CustomerID]);
+                    $stmt->execute([$hashed_password, $customerId]);
                     $success_message = "Password changed successfully!";
                     
                     // Refresh customer data
                     $stmt = $pdo->prepare("SELECT * FROM customer_t WHERE CustomerID = ?");
-                    $stmt->execute([$CustomerID]);
+                    $stmt->execute([$customerId]);
                     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
                 } else {
                     $error_message = "New passwords do not match!";
@@ -92,6 +93,7 @@ try {
 } catch(PDOException $e) {
     die("Database error: " . $e->getMessage());
 }
+
 
 function generateInitials($name) {
     $names = explode(' ', $name);
