@@ -1,6 +1,9 @@
 <?php
 require_once 'config.php';
-session_start();
+
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
+}
 
 // Initialize cart in session if not exists
 if (!isset($_SESSION['cart'])) {
@@ -1134,7 +1137,6 @@ $total = $subtotal + $deliveryFee;
   </div>
 </footer>
 
-
 <script>
   // Function to get cart from localStorage
   function getLocalStorageCart() {
@@ -1157,20 +1159,18 @@ $total = $subtotal + $deliveryFee;
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          location.reload();
+          // Update cart count without reloading the page
+          updateCartCount(data.cart);
         }
       });
     }
   }
 
-  // Sync cart on page load
-  document.addEventListener('DOMContentLoaded', function() {
-    syncCartWithServer();
-    
-    // Update cart count from session (after potential sync)
-    const cartCount = <?php echo (int)$cartCount; ?>;
-    document.getElementById('cartCount').innerText = cartCount;
-  });
+  // Function to update cart count without page reload
+  function updateCartCount(cart) {
+    const count = cart.reduce((total, item) => total + (item.quantity || 0), 0);
+    document.getElementById('cartCount').textContent = count;
+  }
 
   // Cart functionality
   function updateQuantity(index, change) {
@@ -1202,7 +1202,8 @@ $total = $subtotal + $deliveryFee;
                   }
                   localStorage.setItem('farmvilleCart', JSON.stringify(cart));
               }
-              location.reload();
+              updateCartCount(data.cart);
+              location.reload(); // Only reload if necessary for other updates
           }
       });
   }
@@ -1224,7 +1225,8 @@ $total = $subtotal + $deliveryFee;
                   const cart = getLocalStorageCart();
                   cart.splice(index, 1);
                   localStorage.setItem('farmvilleCart', JSON.stringify(cart));
-                  location.reload();
+                  updateCartCount(data.cart);
+                  location.reload(); // Only reload if necessary for other updates
               }
           });
       }
@@ -1244,7 +1246,8 @@ $total = $subtotal + $deliveryFee;
               if (data.success) {
                   // Clear localStorage as well
                   localStorage.removeItem('farmvilleCart');
-                  location.reload();
+                  updateCartCount([]);
+                  location.reload(); // Only reload if necessary for other updates
               }
           });
       }
@@ -1260,36 +1263,27 @@ $total = $subtotal + $deliveryFee;
   const body = document.body;
   let sidebarTimeout;
   
-  // Open sidebar when hovering over toggle button
-  sidebarToggle.addEventListener('mouseenter', () => {
-    clearTimeout(sidebarTimeout);
-    body.classList.add('sidebar-open');
+  // Toggle sidebar on click (for mobile)
+  sidebarToggle.addEventListener('click', function(e) {
+    e.stopPropagation();
+    body.classList.toggle('sidebar-open');
   });
   
-  // Keep sidebar open when mouse enters the sidebar
-  sidebar.addEventListener('mouseenter', () => {
-    clearTimeout(sidebarTimeout);
-  });
-  
-  // Schedule closing sidebar when mouse leaves sidebar or toggle
-  sidebar.addEventListener('mouseleave', () => {
-    sidebarTimeout = setTimeout(() => {
+  // Close sidebar when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!sidebar.contains(e.target) && e.target !== sidebarToggle) {
       body.classList.remove('sidebar-open');
-    }, 300);
-  });
-  
-  sidebarToggle.addEventListener('mouseleave', (e) => {
-    // Only close if we're not moving into the sidebar
-    if (e.relatedTarget !== sidebar) {
-      sidebarTimeout = setTimeout(() => {
-        body.classList.remove('sidebar-open');
-      }, 300);
     }
   });
   
-  // Click toggle for mobile devices
-  sidebarToggle.addEventListener('click', () => {
-    body.classList.toggle('sidebar-open');
+  // Prevent sidebar from closing when clicking inside it
+  sidebar.addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+
+  // Sync cart on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    syncCartWithServer();
   });
 </script>
 </body>

@@ -1,27 +1,22 @@
 <?php
 require_once 'config.php';
 
+// Start session only if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Check if user is logged in, otherwise redirect to login
+if (!isset($_SESSION['customer_id'])) {
+    header("Location: Login_Page.php");
+    exit();
+}
 
 // Initialize database connection
 $conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
-
-// Simple login simulation (replace with your actual login logic)
-if (!isset($_SESSION['customer_id'])) {
-    // For demo purposes, we'll auto-login the first customer
-    $result = $conn->query("SELECT CustomerID FROM customer_t LIMIT 1");
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        $_SESSION['customer_id'] = $row['CustomerID'];
-    } else {
-        // If no customers exist, redirect to login
-        header("Location: Login_Page.php");
-        exit();
-    }
-  }
-  
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -63,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Calculate subtotal
     $subtotal = 0;
     foreach ($cart as $item) {
-        $subtotal += $item['price'] * $item['quantity'];
+        $subtotal += (float)$item['price'] * (float)$item['quantity'];
     }
     
     $total = $subtotal + $deliveryFee;
@@ -109,11 +104,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Commit transaction
         $conn->commit();
         
-        // Clear cart
+        // Clear cart from both session and localStorage
         $_SESSION['cart'] = [];
         
-        // Redirect to order confirmation
-        header("Location: customer-order-history.php?order_id=$orderId");
+        // Redirect to order confirmation with success message
+        header("Location: customer-order-history.php?order_id=$orderId&order_success=1");
         exit();
         
     } catch (Exception $e) {
@@ -127,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $cart = $_SESSION['cart'] ?? [];
 $subtotal = 0;
 foreach ($cart as $item) {
-    $subtotal += $item['price'] * $item['quantity'];
+    $subtotal += (float)$item['price'] * (float)$item['quantity'];
 }
 $deliveryFee = 80; // Default standard delivery
 $total = $subtotal + $deliveryFee;
@@ -1204,149 +1199,189 @@ footer::before {
 
 <script>
   // Sidebar functionality
-  const sidebar = document.getElementById('sidebar');
-  const sidebarToggle = document.getElementById('sidebarToggle');
-  const body = document.body;
-  let sidebarTimeout;
-  
-  // Open sidebar when hovering over toggle button
-  sidebarToggle.addEventListener('mouseenter', () => {
-    clearTimeout(sidebarTimeout);
-    body.classList.add('sidebar-open');
-  });
-  
-  // Keep sidebar open when mouse enters the sidebar
-  sidebar.addEventListener('mouseenter', () => {
-    clearTimeout(sidebarTimeout);
-  });
-  
-  // Schedule closing sidebar when mouse leaves sidebar or toggle
-  sidebar.addEventListener('mouseleave', () => {
-    sidebarTimeout = setTimeout(() => {
-      body.classList.remove('sidebar-open');
-    }, 300);
-  });
-  
-  sidebarToggle.addEventListener('mouseleave', (e) => {
-    // Only close if we're not moving into the sidebar
-    if (e.relatedTarget !== sidebar) {
-      sidebarTimeout = setTimeout(() => {
-        body.classList.remove('sidebar-open');
-      }, 300);
-    }
-  });
-  
-  // Click toggle for mobile devices
-  sidebarToggle.addEventListener('click', () => {
-    body.classList.toggle('sidebar-open');
-  });
-
-  // Simple function to show the selected payment method details and hide others
-  function showPaymentDetails(paymentMethod) {
-    // Hide all payment details sections first
-    document.getElementById('creditCardDetails').style.display = 'none';
-    document.getElementById('mobileMoneyDetails').style.display = 'none';
-    document.getElementById('cashOnDeliveryDetails').style.display = 'none';
+  document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const body = document.body;
+    let sidebarTimeout;
     
-    // Update selected state for payment options
-    document.querySelectorAll('.payment-option').forEach(option => {
-      option.classList.remove('selected');
-    });
-    
-    // Show only the selected payment method details
-    if (paymentMethod === 'creditCard') {
-      document.getElementById('creditCardDetails').style.display = 'block';
-      document.querySelector('#creditCard').parentElement.classList.add('selected');
-    } else if (paymentMethod === 'mobileMoney') {
-      document.getElementById('mobileMoneyDetails').style.display = 'block';
-      document.querySelector('#mobileMoney').parentElement.classList.add('selected');
-    } else if (paymentMethod === 'cashOnDelivery') {
-      document.getElementById('cashOnDeliveryDetails').style.display = 'block';
-      document.querySelector('#cashOnDelivery').parentElement.classList.add('selected');
-    }
-  }
-
-  // Update order total when delivery method changes
-  document.getElementById('deliveryMethod').addEventListener('change', function() {
-    const deliveryMethod = this.value;
-    let deliveryFee = 80; // Default standard delivery
-    
-    switch (deliveryMethod) {
-      case 'express':
-        deliveryFee = 150;
-        break;
-      case 'pickup':
-        deliveryFee = 0;
-        break;
+    // Open sidebar when hovering over toggle button
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('mouseenter', () => {
+        clearTimeout(sidebarTimeout);
+        body.classList.add('sidebar-open');
+      });
     }
     
-    // Update delivery fee display
-    document.getElementById('deliveryFee').innerText = deliveryFee + ' ৳';
+    // Keep sidebar open when mouse enters the sidebar
+    if (sidebar) {
+      sidebar.addEventListener('mouseenter', () => {
+        clearTimeout(sidebarTimeout);
+      });
+    }
     
-    // Calculate and update total
-    const subtotalText = document.getElementById('subtotal').innerText;
-    const subtotal = parseFloat(subtotalText.replace(/[^\d.]/g, ''));
-    const total = subtotal + deliveryFee;
-    document.getElementById('total').innerText = total + ' ৳';
-  });
+    // Schedule closing sidebar when mouse leaves sidebar or toggle
+    if (sidebar) {
+      sidebar.addEventListener('mouseleave', () => {
+        sidebarTimeout = setTimeout(() => {
+          body.classList.remove('sidebar-open');
+        }, 300);
+      });
+    }
+    
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('mouseleave', (e) => {
+        // Only close if we're not moving into the sidebar
+        if (e.relatedTarget !== sidebar) {
+          sidebarTimeout = setTimeout(() => {
+            body.classList.remove('sidebar-open');
+          }, 300);
+        }
+      });
+    }
+    
+    // Click toggle for mobile devices
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('click', () => {
+        body.classList.toggle('sidebar-open');
+      });
+    }
 
-  // Form validation
-  document.getElementById('orderForm').addEventListener('submit', function(e) {
-    let isValid = true;
-    
-    // Validate required fields
-    const requiredFields = this.querySelectorAll('[required]');
-    requiredFields.forEach(field => {
-      if (!field.value.trim()) {
-        field.classList.add('input-validation-error');
-        isValid = false;
-      } else {
-        field.classList.remove('input-validation-error');
+    // Payment method selection
+    function showPaymentDetails(paymentMethod) {
+      // Hide all payment details sections first
+      const paymentDetails = document.querySelectorAll('.payment-details');
+      paymentDetails.forEach(detail => {
+        detail.style.display = 'none';
+      });
+      
+      // Update selected state for payment options
+      const paymentOptions = document.querySelectorAll('.payment-option');
+      paymentOptions.forEach(option => {
+        option.classList.remove('selected');
+      });
+      
+      // Show only the selected payment method details
+      const selectedDetails = document.getElementById(paymentMethod + 'Details');
+      if (selectedDetails) {
+        selectedDetails.style.display = 'block';
       }
-    });
-    
-    // Validate payment method specific fields
-    const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked').value;
-    
-    if (selectedPayment === 'Credit Card') {
-      const cardFields = ['cardName', 'cardNumber', 'expiryDate', 'cvv'];
-      cardFields.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        if (!field.value.trim()) {
-          field.classList.add('input-validation-error');
-          isValid = false;
-        } else {
-          field.classList.remove('input-validation-error');
-        }
-      });
-    } else if (selectedPayment === 'Mobile Money') {
-      const mobileFields = ['mobileProvider', 'mobileNumber'];
-      mobileFields.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        if (!field.value.trim()) {
-          field.classList.add('input-validation-error');
-          isValid = false;
-        } else {
-          field.classList.remove('input-validation-error');
-        }
-      });
+      
+      const selectedOption = document.querySelector('#' + paymentMethod).parentElement;
+      if (selectedOption) {
+        selectedOption.classList.add('selected');
+      }
     }
-    
 
-  
-    // Validate terms checkbox
-    const termsCheckbox = document.getElementById('termsAndConditions');
-    if (!termsCheckbox.checked) {
-      termsCheckbox.classList.add('input-validation-error');
-      isValid = false;
-    } else {
-      termsCheckbox.classList.remove('input-validation-error');
+    // Initialize payment method display
+    const defaultPayment = document.querySelector('input[name="paymentMethod"]:checked');
+    if (defaultPayment) {
+      showPaymentDetails(defaultPayment.id);
     }
-    
-    if (!isValid) {
-      e.preventDefault();
-      alert('Please fill in all required fields correctly.');
+
+    // Update order total when delivery method changes
+    const deliveryMethodSelect = document.getElementById('deliveryMethod');
+    if (deliveryMethodSelect) {
+      deliveryMethodSelect.addEventListener('change', function() {
+        const deliveryMethod = this.value;
+        let deliveryFee = 80; // Default standard delivery
+        
+        switch (deliveryMethod) {
+          case 'express':
+            deliveryFee = 150;
+            break;
+          case 'pickup':
+            deliveryFee = 0;
+            break;
+        }
+        
+        // Update delivery fee display
+        const deliveryFeeElement = document.getElementById('deliveryFee');
+        if (deliveryFeeElement) {
+          deliveryFeeElement.textContent = deliveryFee.toFixed(2) + ' ৳';
+        }
+        
+        // Calculate and update total
+        const subtotalElement = document.getElementById('subtotal');
+        const totalElement = document.getElementById('total');
+        
+        if (subtotalElement && totalElement) {
+          const subtotalText = subtotalElement.textContent;
+          const subtotal = parseFloat(subtotalText.replace(/[^\d.]/g, ''));
+          const total = subtotal + deliveryFee;
+          totalElement.textContent = total.toFixed(2) + ' ৳';
+        }
+      });
     }
+
+    // Form validation
+    const orderForm = document.getElementById('orderForm');
+    if (orderForm) {
+      orderForm.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Validate required fields
+        const requiredFields = this.querySelectorAll('[required]');
+        requiredFields.forEach(field => {
+          if (!field.value.trim()) {
+            field.classList.add('input-validation-error');
+            isValid = false;
+          } else {
+            field.classList.remove('input-validation-error');
+          }
+        });
+        
+        // Validate payment method specific fields
+        const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
+        if (selectedPayment) {
+          if (selectedPayment.value === 'Credit Card') {
+            const cardFields = ['cardName', 'cardNumber', 'expiryDate', 'cvv'];
+            cardFields.forEach(fieldId => {
+              const field = document.getElementById(fieldId);
+              if (field && !field.value.trim()) {
+                field.classList.add('input-validation-error');
+                isValid = false;
+              } else if (field) {
+                field.classList.remove('input-validation-error');
+              }
+            });
+          } else if (selectedPayment.value === 'Mobile Money') {
+            const mobileFields = ['mobileProvider', 'mobileNumber'];
+            mobileFields.forEach(fieldId => {
+              const field = document.getElementById(fieldId);
+              if (field && !field.value.trim()) {
+                field.classList.add('input-validation-error');
+                isValid = false;
+              } else if (field) {
+                field.classList.remove('input-validation-error');
+              }
+            });
+          }
+        }
+        
+        // Validate terms checkbox
+        const termsCheckbox = document.getElementById('termsAndConditions');
+        if (termsCheckbox && !termsCheckbox.checked) {
+          termsCheckbox.classList.add('input-validation-error');
+          isValid = false;
+        } else if (termsCheckbox) {
+          termsCheckbox.classList.remove('input-validation-error');
+        }
+        
+        if (!isValid) {
+          e.preventDefault();
+          alert('Please fill in all required fields correctly.');
+        }
+      });
+    }
+
+    // Payment method radio button click handlers
+    const paymentRadios = document.querySelectorAll('input[name="paymentMethod"]');
+    paymentRadios.forEach(radio => {
+      radio.addEventListener('click', function() {
+        showPaymentDetails(this.id);
+      });
+    });
   });
 </script>
 </body>

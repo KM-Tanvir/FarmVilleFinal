@@ -13,6 +13,8 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+
+
 // Get the first two products for the "Fresh Picks" section
 $sql = "SELECT product_id, product_name, product_type, current_price, stock_status, seasonality 
         FROM product_t 
@@ -1055,24 +1057,36 @@ section, button, a.btn, form {
     body.classList.toggle('sidebar-open');
   });
 
-  // Shared function to update cart count
-  function updateCartCount() {
-    const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
-    const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
-    const cartCountElements = document.querySelectorAll('.cart-count');
-    
-    cartCountElements.forEach(element => {
-      element.innerText = totalItems;
-    });
-  }
-
-  // Call this function when each page loads
-  document.addEventListener('DOMContentLoaded', function() {
+// Update the JavaScript section to include cart synchronization
+document.addEventListener('DOMContentLoaded', function() {
     updateCartCount();
+    initPriceChart();
+    
+    // Sync cart with server on page load
+    const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
+    if (cart.length > 0) {
+        fetch('customer-order-history.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `action=sync_cart&cart_data=${encodeURIComponent(JSON.stringify(cart))}`
+        });
+    }
+});
+
+// Update the cart count function
+function updateCartCount() {
+    const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
+    const totalItems = cart.reduce((total, item) => total + (item.quantity || 0), 0);
+    document.getElementById('cartCount').innerText = totalItems;
+}
+
+
     
     // Initialize the price chart
     initPriceChart();
-  });
+  ;
 
   // Initialize the price chart with data from PHP
   function initPriceChart() {

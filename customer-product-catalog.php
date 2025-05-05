@@ -815,6 +815,7 @@ if (!localStorage.getItem('farmvilleCart')) {
     localStorage.setItem('farmvilleCart', JSON.stringify([]));
 }
 
+// Search products function
 function searchProducts() {
     const input = document.getElementById('searchInput').value.toLowerCase();
     const rows = document.querySelectorAll('#productList tr');
@@ -863,17 +864,23 @@ function clearSearch() {
     searchProducts();
 }
 
-function addToCart(crop, price) {
+// Add to cart function with proper price handling
+function addToCart(crop, price, vendor) {
     const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
+    
+    // Extract numeric price value (remove currency symbol if present)
+    const numericPrice = parseFloat(price.replace(/[^0-9.]/g, ''));
 
-    const existingProduct = cart.find(item => item.crop === crop);
+    const existingProduct = cart.find(item => item.crop === crop && item.vendor === vendor);
 
     if (existingProduct) {
         existingProduct.quantity += 1;
     } else {
         cart.push({
             crop: crop,
-            price: price,
+            price: numericPrice, // Store as number
+            price_display: price, // Keep formatted version for display
+            vendor: vendor || 'FarmVille',
             quantity: 1
         });
     }
@@ -881,11 +888,34 @@ function addToCart(crop, price) {
     localStorage.setItem('farmvilleCart', JSON.stringify(cart));
     updateCartCount();
     showNotification(`${crop} added to cart!`);
+    
+    // Sync with server session
+    syncCartWithServer();
+}
+
+// Sync cart with server session
+function syncCartWithServer() {
+    const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
+    if (cart.length > 0) {
+        fetch('customer-order-history.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `action=sync_cart&cart_data=${encodeURIComponent(JSON.stringify(cart))}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Cart synced with server');
+            }
+        });
+    }
 }
 
 function updateCartCount() {
     const cart = JSON.parse(localStorage.getItem('farmvilleCart')) || [];
-    const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+    const totalItems = cart.reduce((total, item) => total + (item.quantity || 0), 0);
     document.getElementById('cartCount').innerText = totalItems;
 }
 
@@ -957,12 +987,8 @@ function initChart() {
                 borderSkipped: false,
                 hoverBackgroundColor: backgroundColors.map(color => color.replace('0.7', '0.9')),
                 hoverBorderWidth: 3,
-                // Control bar spacing here
-                categoryPercentage: 0.8,  // 80% of the available width for each category
-                barPercentage: 0.7,       // 70% of the available width for each bar
-                // Fixed bar thickness can also be used instead:
-                // barThickness: 25,
-                // maxBarThickness: 30
+                categoryPercentage: 0.8,
+                barPercentage: 0.7
             }]
         },
         options: {
@@ -1041,9 +1067,8 @@ function initChart() {
                             weight: 'bold'
                         },
                         autoSkip: false,
-                        padding: 10 // Add padding between labels
+                        padding: 10
                     },
-                    // Add additional space between bars
                     afterFit: function(axis) {
                         axis.paddingTop = 20;
                         axis.paddingBottom = 20;
@@ -1071,7 +1096,6 @@ function initChart() {
                     });
                 }
             },
-            // Add spacing between bars
             layout: {
                 padding: {
                     left: 20,
@@ -1125,22 +1149,6 @@ function updateChartWithFilteredData(searchTerm) {
     window.priceChart.update();
 }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    initChart();
-    updateCartCount();
-    
-    const chartContainer = document.querySelector('.chart-container');
-    chartContainer.style.opacity = '0';
-    chartContainer.style.transform = 'translateY(20px)';
-    chartContainer.style.transition = 'all 0.8s ease-out';
-    
-    setTimeout(() => {
-        chartContainer.style.opacity = '1';
-        chartContainer.style.transform = 'translateY(0)';
-    }, 300);
-});
-
 // Sidebar functionality
 const sidebar = document.getElementById('sidebar');
 const sidebarToggle = document.getElementById('sidebarToggle');
@@ -1172,6 +1180,25 @@ sidebarToggle.addEventListener('mouseleave', (e) => {
 
 sidebarToggle.addEventListener('click', () => {
     body.classList.toggle('sidebar-open');
+});
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initChart();
+    updateCartCount();
+    
+    // Sync cart with server on page load
+    syncCartWithServer();
+    
+    const chartContainer = document.querySelector('.chart-container');
+    chartContainer.style.opacity = '0';
+    chartContainer.style.transform = 'translateY(20px)';
+    chartContainer.style.transition = 'all 0.8s ease-out';
+    
+    setTimeout(() => {
+        chartContainer.style.opacity = '1';
+        chartContainer.style.transform = 'translateY(0)';
+    }, 300);
 });
 </script>
 
